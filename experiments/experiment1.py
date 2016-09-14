@@ -1,7 +1,7 @@
 from sklearn.cluster import KMeans
 
 from utils.data_reader import DataReader
-from utils.metrics import calculate_set_metric
+from utils.metrics import calculate_set_metrics
 from utils.visualization import clusters_list_to_users_index_sets, users_index_sets_to_users_sets, show_users_sets
 
 __author__ = 'Xomak'
@@ -17,8 +17,8 @@ def experiment1(clusters_number, lists_number):
         print("Clasterisation by list %s" % i)
         show_users_sets(sets)
         for user_set in sets:
-            m = calculate_set_metric(user_set, vectors_ids=[0], allow_relations=False)
-            print("Metric is: %s" % m)
+            m = calculate_set_metrics(user_set, vectors_ids=[0, 1], allow_relations=True)
+            print("Metric is: %s" % sum(m))
         #clasterizations.append(kmeans.fit_predict(reader.get_matrix_by_list(i)))
 
 
