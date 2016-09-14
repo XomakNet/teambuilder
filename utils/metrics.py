@@ -12,7 +12,8 @@ def calculate_set_metrics(user_set, vectors_ids=None, allow_relations=False):
     :return: Metrics list with length len(vector_ids)*2 + [1 (if allow_relations)]
     """
 
-    threshold = 0.5
+    significant_threshold = 0.5
+    negative_threshold = -0.3
     users_number = len(user_set)
     metrics = []
     users_ids_set = set()
@@ -20,7 +21,8 @@ def calculate_set_metrics(user_set, vectors_ids=None, allow_relations=False):
         users_ids_set.add(user.get_id())
     if vectors_ids:
         for vector_id in vectors_ids:
-            behind_threshold_elements = 0
+            behind_significant_threshold_elements = 0
+            behind_negative_threshold_elements = 0
             pairs_number = 0
             vector_distances = []
             for i in range(0, users_number):
@@ -29,10 +31,14 @@ def calculate_set_metrics(user_set, vectors_ids=None, allow_relations=False):
                     distance = normalized_vector_distance(user_set[i].get_lists()[vector_id],
                                                           user_set[j].get_lists()[vector_id])
                     vector_distances.append(distance)
-                    if distance < threshold:
-                        behind_threshold_elements += 1
+                    if distance < significant_threshold:
+                        behind_significant_threshold_elements += 1
+                    if distance < negative_threshold:
+                        behind_negative_threshold_elements += 1
             vectors_average = sum(vector_distances)/len(vector_distances)
-            vectors_threshold_coeff = 1 - behind_threshold_elements/pairs_number
+            vectors_threshold_coeff = 1 - behind_significant_threshold_elements/pairs_number
+            if behind_negative_threshold_elements > 0:
+                vectors_threshold_coeff = 0
             vectors_average_normalized = (vectors_average+1)/2
             metrics.append(vectors_threshold_coeff)
             metrics.append(vectors_average_normalized)
