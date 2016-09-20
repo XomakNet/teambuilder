@@ -18,7 +18,7 @@ def experiment1(clusters_number, lists_number):
         show_users_sets(sets)
         for user_set in sets:
             m = calculate_set_metrics(user_set, vectors_ids=[0, 1], allow_relations=True)
-            print("Metric is: %s" % sum(m))
+            print("Metric is: " + str(m))
         #clasterizations.append(kmeans.fit_predict(reader.get_matrix_by_list(i)))
 
 
