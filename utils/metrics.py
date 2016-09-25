@@ -5,6 +5,23 @@ __author__ = 'Xomak'
 from sklearn.metrics.pairwise import euclidean_distances
 
 
+class MetricsFields:
+    threshold = "Threshold coefficient"
+    average = "Average coefficient"
+    desires = "Users desires coefficient"
+    users_desires = "Users desires array"
+
+
+def print_metrics(metrics_dict):
+    result = []
+
+    for value in metrics_dict.values():
+        result.append(value)
+
+    result.reverse()
+    print(str(result))
+
+
 def calculate_set_metrics(user_set, vectors_ids=None, allow_relations=False, is_custom_centroids=None):
     """
     Calculates metric of given users' set.
@@ -16,12 +33,12 @@ def calculate_set_metrics(user_set, vectors_ids=None, allow_relations=False, is_
     """
 
     if len(user_set) <= 1:
-        return []
+        return {}
 
     significant_threshold = 0.5
     negative_threshold = -0.3
     users_number = len(user_set)
-    metrics = []
+    metrics = {}
 
     if is_custom_centroids is not None:
         out = OutputManager()
@@ -55,8 +72,8 @@ def calculate_set_metrics(user_set, vectors_ids=None, allow_relations=False, is_
             if behind_negative_threshold_elements > 0:
                 vectors_threshold_coeff = 0
             vectors_average_normalized = (vectors_average + 1) / 2
-            metrics.append(round(vectors_threshold_coeff, 2))
-            metrics.append(round(float(vectors_average_normalized), 2))
+            metrics[MetricsFields.threshold] = (round(vectors_threshold_coeff, 2))
+            metrics[MetricsFields.average] = (round(float(vectors_average_normalized), 2))
 
     if allow_relations:
 
@@ -76,13 +93,13 @@ def calculate_set_metrics(user_set, vectors_ids=None, allow_relations=False, is_
                 users_good_relations_counts.append(round(len(sets_intersection) / len(selected_ids), 2))
 
         # 1. Relations coefficient by Kostya
-        relations_coeff = good_relations_number / relations_number
-        metrics.append(round(relations_coeff, 2))
+        # relations_coeff = good_relations_number / relations_number
+        # metrics.append(round(relations_coeff, 2))
 
         # 2. Additional coefficient by Lyoha
         average_suggestions_considerations_coeff = sum(users_good_relations_counts) / len(users_good_relations_counts)
-        metrics.append(users_good_relations_counts)
-        metrics.append(round(average_suggestions_considerations_coeff, 2))
+        metrics[MetricsFields.desires] = (round(average_suggestions_considerations_coeff, 2))
+        metrics[MetricsFields.users_desires] = users_good_relations_counts
 
     return metrics
 

@@ -21,13 +21,13 @@ def show_users_sets(sets):
     :param sets: Set to be showed
     :return:
     """
-    for user_set in sets:
+    for i in range(0, len(sets)):
         line = ""
-        for user in user_set:
+        for user in sets[i]:
             if len(line) > 0:
                 line += ","
             line += str(user)
-        print("[%s]" % line)
+        print("%d) [%s]" % (i + 1, line))
 
 
 def users_index_sets_to_users_sets(users_index_sets, reader):
