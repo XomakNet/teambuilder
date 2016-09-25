@@ -15,10 +15,11 @@ class MetricsFields:
 def print_metrics(metrics_dict):
     result = []
 
-    for value in metrics_dict.values():
-        result.append(value)
+    keys = list(metrics_dict.keys())
+    keys.sort()
+    for k in keys:
+        result.append(metrics_dict[k])
 
-    result.reverse()
     print(str(result))
 
 
@@ -89,7 +90,7 @@ def calculate_set_metrics(user_set, vectors_ids=None, allow_relations=False, is_
             relations_number += len(selected_ids)
             sets_intersection = selected_ids.intersection(users_ids_set)
             good_relations_number += len(sets_intersection)
-            if len(selected_ids) > 0:   # if user peeks someone
+            if len(selected_ids) > 0:  # if user peeks someone
                 users_good_relations_counts.append(round(len(sets_intersection) / len(selected_ids), 2))
 
         # 1. Relations coefficient by Kostya
@@ -97,7 +98,8 @@ def calculate_set_metrics(user_set, vectors_ids=None, allow_relations=False, is_
         # metrics.append(round(relations_coeff, 2))
 
         # 2. Additional coefficient by Lyoha
-        average_suggestions_considerations_coeff = sum(users_good_relations_counts) / len(users_good_relations_counts)
+        average_suggestions_considerations_coeff = 0 if len(users_good_relations_counts) == 0 else sum(
+            users_good_relations_counts) / len(users_good_relations_counts)
         metrics[MetricsFields.desires] = (round(average_suggestions_considerations_coeff, 2))
         metrics[MetricsFields.users_desires] = users_good_relations_counts
 
