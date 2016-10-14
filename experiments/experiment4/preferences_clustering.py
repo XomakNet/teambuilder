@@ -73,7 +73,14 @@ class PreferencesClustering:
         cls._construct_teams_on_lonely_users(nodes, teams)
         cls._balance_teams(nodes, teams, team_size)
         cls._divide_teams(teams, team_size, teams_number)
-        return teams
+
+        result = []
+        for team in teams:
+            new_team = set()
+            for node in team:
+                new_team.add(node.get_user())
+            result.append(new_team)
+        return result
 
     @classmethod
     def _find_set_to_merge_with(cls, teams, current_set, nodes, set_size):
