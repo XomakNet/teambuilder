@@ -47,9 +47,9 @@ def calculate_set_metrics(user_set, vectors_ids=None, allow_relations=False):
         relations_number = 0
         good_relations_number = 0
         for user in user_set:
-            selected_ids = set(user.get_selected_people_list())
+            selected_ids = user.get_selected_people()
             relations_number += len(selected_ids)
-            sets_intersection = selected_ids.intersection(users_ids_set)
+            sets_intersection = selected_ids.intersection(user_set)
             good_relations_number += len(sets_intersection)
         relations_coeff = good_relations_number/relations_number
         metrics.append(relations_coeff)

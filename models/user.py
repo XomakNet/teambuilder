@@ -1,3 +1,5 @@
+from typing import List
+
 __author__ = 'Xomak'
 
 
@@ -12,6 +14,15 @@ class User:
         self._lists = lists
         self._selected_people = selected_people
 
+    def __eq__(self, other):
+        return self.get_id() == other.get_id()
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
+
+    def __hash__(self):
+        return self._id
+
     def __str__(self):
         return str(self._id)
 
@@ -21,5 +32,8 @@ class User:
     def get_lists(self):
         return self._lists
 
-    def get_selected_people_list(self):
+    def set_selected_people(self, selected_people):
+        self._selected_people = selected_people
+
+    def get_selected_people(self):
         return self._selected_people
