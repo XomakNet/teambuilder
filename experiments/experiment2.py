@@ -3,7 +3,7 @@ from sklearn.cluster import KMeans
 
 from utils.data_reader import DataReader
 from utils.metrics import calculate_set_metrics, normalized_vector_distance, print_metrics
-from utils.output import OutputManager, OutFiles
+from utils.output import OutputWriter, OutFiles
 from utils.visualization import clusters_list_to_users_index_sets, users_index_sets_to_users_sets, show_users_sets
 
 
@@ -67,7 +67,7 @@ def experiment2(clusters_number, lists_number):
             print("\nClasterization by list %s" % i)
             show_users_sets(sets)
 
-            out = OutputManager()
+            out = OutputWriter()
             out.write_rewrite(OutFiles.centroids_custom if j == 0 else OutFiles.centroids_embedded, "")
             print("Metrics:")
             for user_set in sets:

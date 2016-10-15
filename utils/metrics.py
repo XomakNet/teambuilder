@@ -1,26 +1,30 @@
-from utils.output import OutputManager, OutFiles
+from utils.output import OutputWriter, OutFiles
+from sklearn.metrics.pairwise import euclidean_distances
 
 __author__ = 'Xomak'
-
-from sklearn.metrics.pairwise import euclidean_distances
 
 
 class MetricsFields:
     threshold = "Threshold coefficient"
     average = "Average coefficient"
     desires = "Users desires coefficient"
-    users_desires = "Users desires array"
 
 
 def print_metrics(metrics_dict):
-    result = []
+    """
+    Print to the console dict of the metrics as string (in the convenient way like [<metric1>, <metric2>, ...])
+    :param metrics_dict: dict of the metrics
+    :return: None
+    """
+
+    metrics_array = []
 
     keys = list(metrics_dict.keys())
     keys.sort()
     for k in keys:
-        result.append(metrics_dict[k])
+        metrics_array.append(metrics_dict[k])
 
-    print(str(result))
+    print(str(metrics_array))
 
 
 def calculate_set_metrics(user_set, vectors_ids=None, allow_relations=False, is_custom_centroids=None):
@@ -42,7 +46,7 @@ def calculate_set_metrics(user_set, vectors_ids=None, allow_relations=False, is_
     metrics = {}
 
     if is_custom_centroids is not None:
-        out = OutputManager()
+        out = OutputWriter()
         out_file_name = OutFiles.centroids_custom if is_custom_centroids else OutFiles.centroids_embedded
 
     if vectors_ids:
@@ -93,15 +97,10 @@ def calculate_set_metrics(user_set, vectors_ids=None, allow_relations=False, is_
             if len(selected_ids) > 0:  # if user peeks someone
                 users_good_relations_counts.append(round(len(sets_intersection) / len(selected_ids), 2))
 
-        # 1. Relations coefficient by Kostya
-        # relations_coeff = good_relations_number / relations_number
-        # metrics.append(round(relations_coeff, 2))
-
-        # 2. Additional coefficient by Lyoha
+        # Desires coefficient
         average_suggestions_considerations_coeff = 0 if len(users_good_relations_counts) == 0 else sum(
             users_good_relations_counts) / len(users_good_relations_counts)
         metrics[MetricsFields.desires] = (round(average_suggestions_considerations_coeff, 2))
-        metrics[MetricsFields.users_desires] = users_good_relations_counts
 
     return metrics
 

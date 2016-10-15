@@ -4,7 +4,7 @@ class OutFiles:
     centroids_embedded = out_folder + "centroids_embedded_check.txt"
 
 
-class OutputManager:
+class OutputWriter:
 
     def write_rewrite(self, filename, data):
         self.write(filename, data, 'w')
