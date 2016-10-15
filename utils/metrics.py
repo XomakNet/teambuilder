@@ -1,108 +1,179 @@
-from utils.output import OutputWriter, OutFiles
 from sklearn.metrics.pairwise import euclidean_distances
 
 __author__ = 'Xomak'
 
 
-class MetricsFields:
-    threshold = "Threshold coefficient"
-    average = "Average coefficient"
-    desires = "Users desires coefficient"
+class TeamMetric:
+
+    def __init__(self, users_set):
+        self._lists_count = len(users_set[0].get_lists())     # Kostil' suggested by Kostya
+        self._lists_metrics = []
+
+        for list_id in range(0, self._lists_count):
+                self._lists_metrics.append(TeamListMetric(users_set, list_id))
+
+        self._desires_metric = TeamDesiresMetric(users_set)
+
+    def __str__(self):
+        result_str = "\nMetrics of the team:"
+
+        for list_metric in self._lists_metrics:
+            result_str += str(list_metric)
+
+        result_str += str(self._desires_metric)
+
+        return result_str
+
+    def get_list_metric_by_list_number(self, list_number):
+        """
+        Returns TeamListMetric object for the list with number list_number
+        :param list_number: number of the list
+        :return: None if list_number < 0 or list_number >= len(lists_metrics), otherwise - TeamListMetric object
+        """
+
+        if list_number < -1 or list_number >= len(self._lists_metrics):
+            return None
+
+        return self._lists_metrics[list_number]
+
+    def get_desires_metric(self):
+        """
+        Returns desires metric for the team
+        :return: TeamDesiresMetric object
+        """
+        return self._desires_metric
 
 
-def print_metrics(metrics_dict):
-    """
-    Print to the console dict of the metrics as string (in the convenient way like [<metric1>, <metric2>, ...])
-    :param metrics_dict: dict of the metrics
-    :return: None
-    """
+class TeamDesiresMetric:
 
-    metrics_array = []
+    def __init__(self, users_set):
+        self._is_valid = False
+        self._desires_coeff = 0
+        self._desires_of_users_list = []
+        self._all_desires_count = 0
+        self._all_satisfied_desires_count = 0
 
-    keys = list(metrics_dict.keys())
-    keys.sort()
-    for k in keys:
-        metrics_array.append(metrics_dict[k])
+        self._calculate_metric(users_set)
 
-    print(str(metrics_array))
+    def is_valid(self):
+        return self._is_valid
 
+    def __str__(self):
+        if self._is_valid:
+            return "\nDesires metric = %s" % self._desires_coeff
+        else:
+            return "Desires metric isn't valid"
 
-def calculate_set_metrics(user_set, vectors_ids=None, allow_relations=False, is_custom_centroids=None):
-    """
-    Calculates metric of given users' set.
-    :param user_set: Users' set
-    :param vectors_ids: Vectors' ids, which should be included in metric
-    :param allow_relations: Relations between users will be allowed in metrics calculation
-    :param is_custom_centroids: Which centroids we are checking now? Put None, if it's not necessary to check centroids.
-    :return: Metrics list with length len(vector_ids)*2 + [1 (if allow_relations)]
-    """
+    def _calculate_metric(self, users_set):
 
-    if len(user_set) <= 1:
-        return {}
-
-    significant_threshold = 0.5
-    negative_threshold = -0.3
-    users_number = len(user_set)
-    metrics = {}
-
-    if is_custom_centroids is not None:
-        out = OutputWriter()
-        out_file_name = OutFiles.centroids_custom if is_custom_centroids else OutFiles.centroids_embedded
-
-    if vectors_ids:
-        for vector_id in vectors_ids:
-            behind_significant_threshold_elements = 0
-            behind_negative_threshold_elements = 0
-            pairs_number = 0
-            vector_distances = []
-            for i in range(0, users_number):
-                for j in range(i + 1, users_number):
-                    pairs_number += 1
-                    distance = normalized_vector_distance(user_set[i].get_lists()[vector_id],
-                                                          user_set[j].get_lists()[vector_id])
-                    vector_distances.append(distance)
-                    if distance < significant_threshold:
-                        behind_significant_threshold_elements += 1
-                    if distance < negative_threshold:
-                        behind_negative_threshold_elements += 1
-
-            copy_vector_distances = [str(distance) for distance in vector_distances]
-            copy_vector_distances.sort()
-
-            if is_custom_centroids is not None:
-                out.write_append(out_file_name, " ".join(copy_vector_distances) + "\n")
-
-            vectors_average = sum(vector_distances) / len(vector_distances)
-            vectors_threshold_coeff = 1 - behind_significant_threshold_elements / pairs_number
-            if behind_negative_threshold_elements > 0:
-                vectors_threshold_coeff = 0
-            vectors_average_normalized = (vectors_average + 1) / 2
-            metrics[MetricsFields.threshold] = (round(vectors_threshold_coeff, 2))
-            metrics[MetricsFields.average] = (round(float(vectors_average_normalized), 2))
-
-    if allow_relations:
-
+        # Create set of users' ids
         users_ids_set = set()
-        for user in user_set:
+        for user in users_set:
             users_ids_set.add(user.get_id())
 
-        relations_number = 0
-        good_relations_number = 0
-        users_good_relations_counts = []
-        for user in user_set:
-            selected_ids = user.get_selected_people()
-            relations_number += len(selected_ids)
-            sets_intersection = selected_ids.intersection(user_set)
-            good_relations_number += len(sets_intersection)
-            if len(selected_ids) > 0:  # if user peeks someone
-                users_good_relations_counts.append(round(len(sets_intersection) / len(selected_ids), 2))
+        for user in users_set:
 
-        # Desires coefficient
-        average_suggestions_considerations_coeff = 0 if len(users_good_relations_counts) == 0 else sum(
-            users_good_relations_counts) / len(users_good_relations_counts)
-        metrics[MetricsFields.desires] = (round(average_suggestions_considerations_coeff, 2))
+            # Get users which have been selected by user
+            users_selected_by_user = user.get_selected_people()
+            desires_of_user_count = len(users_selected_by_user)
+            satisfied_desires_count = len(users_selected_by_user.intersection(users_set))
 
-    return metrics
+            # Increment global counters
+            self._all_desires_count += desires_of_user_count
+            self._all_satisfied_desires_count += satisfied_desires_count
+
+            # Append desires data for the user
+            satisfied_desires_percentage = 0 if desires_of_user_count == 0 else \
+                round(satisfied_desires_count / desires_of_user_count, 2)
+            self._desires_of_users_list.append({"id": user.get_id(),
+                                                "desires_count": desires_of_user_count,
+                                                "satisfied_desires_count": satisfied_desires_count,
+                                                "satisfied_desires_percentage": satisfied_desires_percentage})
+
+        # Calculating desires coefficient
+        if self._all_desires_count == 0:
+            self._desires_coeff = 0
+        else:
+            self._desires_coeff = round(self._all_satisfied_desires_count / self._all_desires_count, 2)
+
+        self._is_valid = True
+
+
+class TeamListMetric:
+    _significant_threshold = 0.5
+    _negative_threshold = -0.3
+
+    def __init__(self, users_set, list_id):
+        self._is_valid = False
+        self._list_id = list_id
+        self._average_coeff = 0
+        self._threshold_coeff = 0
+        self._pair_distances = []
+        self._pairs_count = 0
+        self._users_count = 0
+        self._behind_significant_threshold_count = 0
+        self._behing_negative_threshold_count = 0
+
+        self._calculate_metric(users_set)
+
+    def is_valid(self):
+        return self._is_valid
+
+    def __str__(self):
+        if self._is_valid:
+            return "\nList %d, avg = %s, threshold = %s" % (self._list_id, self._average_coeff, self._threshold_coeff)
+        else:
+            return "\nMetric of list %d isn't valid" % self._list_id
+
+    def get_average_coeff(self):
+        """
+        Returns normalized (0..1) average pair distance
+        :return: average coefficient
+        """
+        return self._average_coeff
+
+    def get_threshold_coeff(self):
+        """
+        Returns normalized(0..1) value, that shows quality of connections between users.
+        C = 1 - (behind_significant_threshold_pairs_count / pairs_count), or
+        C = 0, if there are at least 1 pair with distance < behind_negative_threshold
+        :return: threshold coefficient
+        """
+        return self._threshold_coeff
+
+    def _calculate_metric(self, user_set):
+
+        if len(user_set) <= 1:
+            return
+
+        self._users_count = len(user_set)
+        # Calculate and compare distances between different users
+        for first_user_index in range(0, self._users_count):
+            for second_user_index in range(first_user_index + 1, self._users_count):
+
+                self._pairs_count += 1
+                distance = normalized_vector_distance(user_set[first_user_index].get_lists()[self._list_id],
+                                                      user_set[second_user_index].get_lists()[self._list_id])
+                self._pair_distances.append(distance)
+
+                if distance < self._significant_threshold:
+                    self._behind_significant_threshold_count += 1
+
+                if distance < self._negative_threshold:
+                    self._behing_negative_threshold_count += 1
+
+        # Calculating average coefficient
+        average_pair_distance = sum(self._pair_distances) / len(self._pair_distances)
+        average_pair_distance_normalized = (average_pair_distance + 1) / 2
+        self._average_coeff = (round(float(average_pair_distance_normalized), 2))
+
+        # Calculating threshold coefficient
+        self._threshold_coeff = 1 - self._behind_significant_threshold_count / self._pairs_count
+        if self._behing_negative_threshold_count > 0:
+            self._threshold_coeff = 0
+        self._threshold_coeff = (round(self._threshold_coeff, 2))
+
+        self._is_valid = True
 
 
 def normalized_vector_distance(vector1, vector2):
