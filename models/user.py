@@ -14,6 +14,14 @@ class User:
         self._lists = lists
         self._selected_people = selected_people
 
+    def copy(self):
+        """
+        Returns copy of this user.
+        WARNING! Connections to other users are NOT copied
+        :return:
+        """
+        return User(self._id, self._lists, None)
+
     def __eq__(self, other):
         return self.get_id() == other.get_id()
 
