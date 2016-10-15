@@ -4,25 +4,68 @@ __author__ = 'Xomak'
 
 
 class TeamMetric:
+    _list_metric_weight = 1
+    _desires_metric_weight = 0
 
     def __init__(self, users_set):
-        self._lists_count = len(users_set[0].get_lists())     # Kostil' suggested by Kostya
+        self._lists_count = len(users_set[0].get_lists())  # Kostiyl' was suggested by Kostya
         self._lists_metrics = []
 
         for list_id in range(0, self._lists_count):
-                self._lists_metrics.append(TeamListMetric(users_set, list_id))
+            self._lists_metrics.append(TeamListMetric(users_set, list_id))
 
         self._desires_metric = TeamDesiresMetric(users_set)
+
+        self._calc_final_metric_value()
+
+    def _calc_final_metric_value(self):
+        """
+        Calculate final metric of the team, and set it to private field self._final_metric_value.
+        Final metric = sum(correct_final_list_metric)/correct_final_list_metric_count
+        :return: nothing :)
+        """
+
+        self._final_metric_value = 0
+
+        # Calculate final lists metric
+        correct_list_metrics_count = 0
+        list_metrics_value = 0
+        for list_id in range(0, self._lists_count):
+
+            if self._lists_metrics[list_id].is_valid():
+                list_metrics_value += self._lists_metrics[list_id].get_final_metric_value()
+                correct_list_metrics_count += 1
+        if correct_list_metrics_count > 0:
+            list_metrics_value /= correct_list_metrics_count
+
+        # Calculate final desires metric
+        final_desires_metric = self._desires_metric.get_final_metric_value()
+
+        # Calculate final metric
+        self._final_metric_value = list_metrics_value * self._list_metric_weight + \
+                                   final_desires_metric * self._desires_metric_weight
 
     def __str__(self):
         result_str = "\nMetrics of the team:"
 
         for list_metric in self._lists_metrics:
-            result_str += str(list_metric)
+            result_str += "\n%s" % str(list_metric)
 
-        result_str += str(self._desires_metric)
+        result_str += "\n%s" % str(self._desires_metric)
+        result_str += "\nFINAL METRIC: %s" % str(self._final_metric_value)
 
         return result_str
+
+    def __cmp__(self, other):
+        if self._final_metric_value > other.get_final_metric_value():
+            return 1
+        elif self._final_metric_value < other.get_final_metric_value():
+            return -1
+        else:
+            return 0
+
+    def get_final_metric_value(self):
+        return self._final_metric_value
 
     def get_list_metric_by_list_number(self, list_number):
         """
@@ -45,7 +88,6 @@ class TeamMetric:
 
 
 class TeamDesiresMetric:
-
     def __init__(self, users_set):
         self._is_valid = False
         self._desires_coeff = 0
@@ -60,9 +102,12 @@ class TeamDesiresMetric:
 
     def __str__(self):
         if self._is_valid:
-            return "\nDesires metric = %s" % self._desires_coeff
+            return "Desires metric = %s" % self._desires_coeff
         else:
             return "Desires metric isn't valid"
+
+    def get_final_metric_value(self):
+        return self._desires_coeff
 
     def _calculate_metric(self, users_set):
 
@@ -72,7 +117,6 @@ class TeamDesiresMetric:
             users_ids_set.add(user.get_id())
 
         for user in users_set:
-
             # Get users which have been selected by user
             users_selected_by_user = user.get_selected_people()
             desires_of_user_count = len(users_selected_by_user)
@@ -103,6 +147,9 @@ class TeamListMetric:
     _significant_threshold = 0.5
     _negative_threshold = -0.3
 
+    _average_coeff_weight = 0.4
+    _threshold_coeff_weight = 0.6
+
     def __init__(self, users_set, list_id):
         self._is_valid = False
         self._list_id = list_id
@@ -121,9 +168,12 @@ class TeamListMetric:
 
     def __str__(self):
         if self._is_valid:
-            return "\nList %d, avg = %s, threshold = %s" % (self._list_id, self._average_coeff, self._threshold_coeff)
+            return "List %d, avg = %s, threshold = %s" % (self._list_id, self._average_coeff, self._threshold_coeff)
         else:
-            return "\nMetric of list %d isn't valid" % self._list_id
+            return "Metric of list %d isn't valid" % self._list_id
+
+    def get_final_metric_value(self):
+        return self._average_coeff_weight * self._average_coeff + self._threshold_coeff_weight * self._threshold_coeff
 
     def get_average_coeff(self):
         """
