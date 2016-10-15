@@ -4,6 +4,8 @@ __author__ = 'Xomak'
 
 
 class PreferencesClustering:
+    DEBUG = False
+
     @classmethod
     def _construct_graph(cls, users):
         """
@@ -95,8 +97,13 @@ class PreferencesClustering:
         merge_candidates = cls._get_sets_with_nearest_size(teams, set_size, current_set)
         set_to_merge = None
         max_connections = None
+        if cls.DEBUG:
+            print("Looking up for set to merge with %s" % next(iter(current_set)))
+        merge_candidates.sort(key=lambda x: len(x))
         for candidate in merge_candidates:
             connections_number = cls._calculate_set_connections(current_set, candidate)
+            if cls.DEBUG:
+                print("Candadate %s (%d) with cn: %s" % (next(iter(candidate)), len(candidate), connections_number))
             if max_connections is None or connections_number > max_connections:
                 max_connections = connections_number
                 set_to_merge = candidate
@@ -136,21 +143,23 @@ class PreferencesClustering:
         :param required_teams_number: Required number of teams
         :return:
         """
-        bad_guys = dict()
+        poorest_members = dict()
         for current_set in teams:
             if len(current_set) == max_team_size:
-                bad_guys[cls._find_poorest_member(current_set)] = current_set
-        sorted_guys = list(bad_guys.keys())
+                poorest_members[cls._find_poorest_member(current_set)] = current_set
+        sorted_guys = list(poorest_members.keys())
         sorted_guys.sort()
 
         while len(teams) < required_teams_number:
-            guy1 = sorted_guys.pop()
-            guy2 = sorted_guys.pop()
-            bad_guys[guy1].remove(guy1)
-            bad_guys[guy2].remove(guy2)
+            member1 = sorted_guys.pop()
+            member2 = sorted_guys.pop()
+
+            # Remove members from their current teams
+            poorest_members[member1].remove(member1)
+            poorest_members[member2].remove(member2)
             t = set()
-            t.add(guy1)
-            t.add(guy2)
+            t.add(member1)
+            t.add(member2)
             teams.append(t)
 
     @classmethod
@@ -183,7 +192,9 @@ class PreferencesClustering:
     @classmethod
     def _get_sets_with_nearest_size(cls, sets, needed_size, except_set):
         """
-        Returns sets, which have size, equal or nearest to given size, but not including except_set
+        Returns all sets, having size equal or less than needed_size.
+        If no such set exists, returns first set with size more than needed_size.
+        Except_set is not considered.
         :param sets: List of sets
         :param needed_size: Size
         :param except_set: This set will not be present in result
@@ -192,18 +203,28 @@ class PreferencesClustering:
         if needed_size < 1:
             raise ValueError("needed_size should be > 0: %s" % needed_size)
         sizes = dict()
-        tn = needed_size
         for current_set in sets:
             if current_set != except_set:
                 size = len(current_set)
                 if size not in sizes.keys():
                     sizes[size] = list()
                 sizes[size].append(current_set)
-        while needed_size not in sizes.keys():
-            needed_size -= 1
-            if needed_size == 0:
-                needed_size = max(sizes.keys())
-        return sizes[needed_size]
+        result = []
+        size = needed_size
+        while size > 0:
+            try:
+                result += sizes[size]
+            except KeyError:
+                pass
+            size -= 1
+        size = needed_size + 1
+        while len(result) == 0:
+            try:
+                result += sizes[size]
+            except KeyError:
+                pass
+            size += 1
+        return result
 
     @classmethod
     def _calculate_set_connections(cls, set1, set2):
