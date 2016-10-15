@@ -66,6 +66,8 @@ class PreferencesClustering:
         :param teams_number: Required teams number
         :return: List of sets of users
         """
+        if teams_number > len(users):
+            raise ValueError("Teams number should be less or equal to users count")
         nodes = cls._construct_graph(users)
         teams = list()
         team_size = int(ceil(len(users) / teams_number))
@@ -73,7 +75,7 @@ class PreferencesClustering:
         cls._construct_teams(nodes, teams, team_size, True)
         cls._construct_teams(nodes, teams, team_size, False)
         cls._construct_teams_on_lonely_users(nodes, teams)
-        cls._balance_teams(nodes, teams, team_size)
+        cls._balance_teams(nodes, teams, team_size, teams_number)
         cls._divide_teams(teams, team_size, teams_number)
 
         result = []
@@ -114,24 +116,44 @@ class PreferencesClustering:
         return set_to_merge
 
     @classmethod
-    def _balance_teams(cls, nodes, teams, max_team_size):
+    def _balance_teams(cls, nodes, teams, max_team_size, teams_number):
         """
-        Balances teams
+        Balances teams and reduces their count to teams_number or less than teams_number
         :param nodes: Graph with connections between users
         :param teams: Teams set
         :param max_team_size: Maximum team size
+        :param teams_number: Number of team
         :return:
         """
-        while not cls._check_team_set_balance(teams, max_team_size):
+        is_balanced = cls._check_team_set_balance(teams, max_team_size)
+        while not is_balanced or len(teams) > teams_number:
             # From small teams to bigger
             teams.sort(key=lambda x: len(x))
             for current_set in teams:
                 current_length = len(current_set)
-                if current_length < max_team_size - 1:
+                if current_length < max_team_size - 1 or (is_balanced and current_length < max_team_size):
                     needed_merge_size = max_team_size - current_length
                     set_to_merge = cls._find_set_to_merge_with(teams, current_set, nodes, needed_merge_size)
                     cls._merge_teams(teams, current_set, set_to_merge)
                     break
+            is_balanced = cls._check_team_set_balance(teams, max_team_size)
+
+    @classmethod
+    def _find_poorest_two(cls, teams, max_team_size):
+        """
+        Finds at least two poorest members
+        :param teams: teams set
+        :param max_team_size: Maximal team size
+        :return: dict with poorest members as keys and their team as values
+        """
+        poorest_members = dict()
+        size = max_team_size
+        while len(poorest_members) < 2:
+            for current_set in teams:
+                if len(current_set) == size:
+                    poorest_members[cls._find_poorest_member(current_set)] = current_set
+            size -= 1
+        return poorest_members
 
     @classmethod
     def _divide_teams(cls, teams, max_team_size, required_teams_number):
@@ -143,24 +165,25 @@ class PreferencesClustering:
         :param required_teams_number: Required number of teams
         :return:
         """
-        poorest_members = dict()
-        for current_set in teams:
-            if len(current_set) == max_team_size:
-                poorest_members[cls._find_poorest_member(current_set)] = current_set
-        sorted_guys = list(poorest_members.keys())
-        sorted_guys.sort()
+        if len(teams) < required_teams_number:
 
-        while len(teams) < required_teams_number:
-            member1 = sorted_guys.pop()
-            member2 = sorted_guys.pop()
 
-            # Remove members from their current teams
-            poorest_members[member1].remove(member1)
-            poorest_members[member2].remove(member2)
-            t = set()
-            t.add(member1)
-            t.add(member2)
-            teams.append(t)
+            while len(teams) < required_teams_number:
+                poorest_members = cls._find_poorest_two(teams, max_team_size)
+
+                sorted_members = list(poorest_members.keys())
+                sorted_members.sort()
+
+                member1 = sorted_members.pop()
+                member2 = sorted_members.pop()
+
+                # Remove members from their current teams
+                poorest_members[member1].remove(member1)
+                poorest_members[member2].remove(member2)
+                t = set()
+                t.add(member1)
+                t.add(member2)
+                teams.append(t)
 
     @classmethod
     def _check_team_set_balance(cls, teams, max_team_size):
@@ -262,7 +285,7 @@ class PreferencesClustering:
     @classmethod
     def _find_poorest_member(cls, team):
         """
-        Returns member of the team, who has minimal connectivity rank with other members
+        Returns member of the team, who has minimal connectivity rank with other members in his team
         :param team: Team - users set
         :return: Poorest member
         """
