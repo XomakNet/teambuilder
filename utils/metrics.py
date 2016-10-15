@@ -90,9 +90,9 @@ def calculate_set_metrics(user_set, vectors_ids=None, allow_relations=False, is_
         good_relations_number = 0
         users_good_relations_counts = []
         for user in user_set:
-            selected_ids = set(user.get_selected_people_list())
+            selected_ids = user.get_selected_people()
             relations_number += len(selected_ids)
-            sets_intersection = selected_ids.intersection(users_ids_set)
+            sets_intersection = selected_ids.intersection(user_set)
             good_relations_number += len(sets_intersection)
             if len(selected_ids) > 0:  # if user peeks someone
                 users_good_relations_counts.append(round(len(sets_intersection) / len(selected_ids), 2))
