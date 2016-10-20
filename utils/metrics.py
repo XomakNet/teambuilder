@@ -67,6 +67,9 @@ class TeamMetric:
     def get_final_metric_value(self):
         return self._final_metric_value
 
+    def get_all_lists_metrics(self):
+        return self._lists_metrics
+
     def get_list_metric_by_list_number(self, list_number):
         """
         Returns TeamListMetric object for the list with number list_number
@@ -162,6 +165,9 @@ class TeamListMetric:
         self._behing_negative_threshold_count = 0
 
         self._calculate_metric(users_set)
+
+    def get_list_id(self):
+        return self._list_id
 
     def is_valid(self):
         return self._is_valid

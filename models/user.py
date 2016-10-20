@@ -9,10 +9,14 @@ class User:
     _lists = []
     _selected_people = []
 
-    def __init__(self, id, lists, selected_people):
+    def __init__(self, id, lists, selected_people, name = None):
         self._id = id
+        self._name = name
         self._lists = lists
         self._selected_people = selected_people
+
+    def get_name(self):
+        return self._name
 
     def copy(self):
         """
