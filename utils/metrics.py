@@ -8,7 +8,7 @@ class TeamMetric:
     _desires_metric_weight = 0
 
     def __init__(self, users_set):
-        self._lists_count = len(users_set[0].get_lists())  # Kostiyl' was suggested by Kostya
+        self._lists_count = len(next(iter(users_set)).get_lists())  # Kostiyl' was suggested by Kostya
         self._lists_metrics = []
 
         for list_id in range(0, self._lists_count):
@@ -197,13 +197,14 @@ class TeamListMetric:
             return
 
         self._users_count = len(user_set)
+        user_list = list(user_set)
         # Calculate and compare distances between different users
         for first_user_index in range(0, self._users_count):
             for second_user_index in range(first_user_index + 1, self._users_count):
 
                 self._pairs_count += 1
-                distance = normalized_vector_distance(user_set[first_user_index].get_lists()[self._list_id],
-                                                      user_set[second_user_index].get_lists()[self._list_id])
+                distance = normalized_vector_distance(user_list[first_user_index].get_lists()[self._list_id],
+                                                      user_list[second_user_index].get_lists()[self._list_id])
                 self._pair_distances.append(distance)
 
                 if distance < self._significant_threshold:
