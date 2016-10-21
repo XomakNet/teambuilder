@@ -32,7 +32,7 @@ class Serializer:
     @classmethod
     def _get_pairwise_distances(cls, all_users):
         result = []
-        for first_user_index in range(1, len(all_users)):
+        for first_user_index in range(0, len(all_users)):
             for second_user_index in range(first_user_index+1, len(all_users)):
                 current_pair = dict()
                 user1 = all_users[first_user_index]
