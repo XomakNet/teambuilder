@@ -56,6 +56,18 @@ class DataReader:
     def get_user_id_by_index(self, index: int) -> User:
         return int(self._data[index][DataFields.user_id])
 
+    def get_user_index_by_id(self, user_id: int) -> int:
+        """
+        Finds index of the user with given user_id
+        :param user_id: id of the user
+        :return: index of the user
+        """
+        for user_index in range(0, len(self._data)):
+            if int(self._data[user_index][DataFields.user_id]) == user_id:
+                return user_index
+
+        raise IndexError("Error finding user with id == %d" % user_id)
+
     def get_matrix_by_list(self, list_id: int):
         result = [user[DataFields.lists][list_id] for user in self._data]
         return result
