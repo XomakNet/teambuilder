@@ -1,6 +1,7 @@
 from typing import List
 
 from models.user import User
+from utils.math import get_average_mutual_distances, avg
 
 
 def dec_number_to_base(dec_number: int, base: int, result_digits_count: int) -> List[int]:
@@ -17,7 +18,6 @@ def dec_number_to_base(dec_number: int, base: int, result_digits_count: int) -> 
 
 
 class Clusterings:
-
     def __init__(self, clusters_in_clustering_count):
         self._clusterings = {}
         self._clusters_in_clustering_count = clusters_in_clustering_count
@@ -68,8 +68,7 @@ class Clusterings:
         return list(common_part)
 
     def get_max_common_part_of_clusterings(self) -> List[User]:
-        max_length_of_common_part = 0
-        max_common_part = []
+        clusters_with_distances = {}
         lists_count = len(self._clusterings)
         total_comparisons_count = self._get_product_of_clusterings_sizes()
 
@@ -88,10 +87,12 @@ class Clusterings:
             current_common_part = self._get_common_part_of_clusters(clusters_for_comparison)
 
             # Remember common part with maximum length
-            if len(current_common_part) > max_length_of_common_part:
-                max_length_of_common_part = len(current_common_part)
-                max_common_part = current_common_part
+            if len(current_common_part) > 1:
+                clusters_with_distances[tuple(current_common_part)] = avg(
+                    get_average_mutual_distances(current_common_part, lists_count))
 
-        return max_common_part
+        for cluster, distances in clusters_with_distances.items():
+            print(str([user.get_id() for user in cluster]) + str(distances))
 
+        return list(sorted(clusters_with_distances, key=lambda k: clusters_with_distances[k], reverse=True)[0])
 

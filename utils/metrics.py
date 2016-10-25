@@ -1,4 +1,4 @@
-from sklearn.metrics.pairwise import euclidean_distances
+from utils.math import normalized_vector_distance
 
 __author__ = 'Xomak'
 
@@ -29,21 +29,22 @@ class TeamMetric:
 
         # Calculate final lists metric
         correct_list_metrics_count = 0
-        list_metrics_value = 0
+        final_list_metrics_value = 0
         for list_id in range(0, self._lists_count):
 
             if self._lists_metrics[list_id].is_valid():
-                list_metrics_value += self._lists_metrics[list_id].get_final_metric_value()
+                final_list_metrics_value += self._lists_metrics[list_id].get_final_metric_value()
                 correct_list_metrics_count += 1
+
         if correct_list_metrics_count > 0:
-            list_metrics_value /= correct_list_metrics_count
+            final_list_metrics_value /= correct_list_metrics_count
 
         # Calculate final desires metric
-        final_desires_metric = self._desires_metric.get_final_metric_value()
+        final_desires_metric_value = self._desires_metric.get_final_metric_value()
 
         # Calculate final metric
-        self._final_metric_value = list_metrics_value * self._list_metric_weight + \
-                                   final_desires_metric * self._desires_metric_weight
+        self._final_metric_value = final_list_metrics_value * self._list_metric_weight + \
+                                   final_desires_metric_value * self._desires_metric_weight
 
     def __str__(self):
         result_str = "\nMetrics of the team:"
@@ -225,19 +226,3 @@ class TeamListMetric:
         self._threshold_coeff = (round(self._threshold_coeff, 2))
 
         self._is_valid = True
-
-
-def normalized_vector_distance(vector1, vector2):
-    """
-    Normalized distance in range [-1,1] between two rank vectors
-    :param vector1: First vector
-    :param vector2: Second vector
-    :return: distance
-    """
-    if len(vector1) == len(vector2):
-        n = len(vector1)
-        distance = euclidean_distances([vector1], [vector2])[0][0] ** 2
-        normalized = 1 - distance * 6 / (n * (n ** 2 - 1))
-        return normalized
-    else:
-        raise ValueError()

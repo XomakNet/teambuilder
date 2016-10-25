@@ -4,7 +4,8 @@ from sklearn.cluster import KMeans
 
 from models.clusterings import Clusterings
 from utils.data_reader import DataReader
-from utils.metrics import TeamMetric, normalized_vector_distance
+from utils.math import get_average_mutual_distances, avg, is_cluster_full
+from utils.metrics import TeamMetric
 from utils.visualization import show_users_sets
 
 CLUSTERS_COUNT = 5
@@ -93,30 +94,6 @@ def get_not_clustered_users_set(reader, clustered_users=None):
     return set(reader.get_all_users()).difference(set(clustered_users))  # all_users EXCEPT clustered_users
 
 
-def get_average_mutual_distances(cluster, lists_count):
-    """
-    Calculate normalized average mutual distances for each user in a cluster
-    :param cluster: list of users, which where grouped in cluster
-    :param lists_count: count of lists, by which we're clustering
-    :return:
-    """
-    users_mutual_distances = [0 for user in cluster]
-
-    for user_number_1 in range(0, len(cluster) - 1):
-        for user_number_2 in range(user_number_1 + 1, len(cluster)):
-
-            distance_all_lists = 0
-            for list_number in range(0, lists_count):
-                curr_list_distance = normalized_vector_distance(cluster[user_number_1].get_lists()[list_number],
-                                                                cluster[user_number_2].get_lists()[list_number])
-                distance_all_lists += curr_list_distance
-
-            users_mutual_distances[user_number_1] += distance_all_lists
-            users_mutual_distances[user_number_2] += distance_all_lists
-
-    return users_mutual_distances
-
-
 def kick_user_from_cluster(cluster, lists_count):
     """
     Finding "the weakest node" in the cluster and remove it.
@@ -129,17 +106,75 @@ def kick_user_from_cluster(cluster, lists_count):
     # Calculate special metric for each user - the smaller it is, the less suitable is a user for the clusters
     users_mutual_distances = get_average_mutual_distances(cluster, lists_count)
 
+    print("Min distance: %f" % min(users_mutual_distances))
+
     for user_index, user_distance in enumerate(users_mutual_distances):
         if user_distance == min(users_mutual_distances):
             print("Kicked user %d" % cluster[user_index].get_id())
             cluster.remove(cluster[user_index])
+            users_mutual_distances.remove(user_distance)
             break
+
+    users_mutual_distances = get_average_mutual_distances(cluster, lists_count)
+    for user_index, user_distance in enumerate(users_mutual_distances):
+        print("User #%d distance: %f; " % (cluster[user_index].get_id(), user_distance))
 
     return cluster
 
 
-def is_cluster_full(cluster, max_cluster_size):
-    return len(cluster) >= max_cluster_size
+def balance_after_clustering(clusters, not_clustered_users_set, lists_count, max_cluster_size):
+    """
+    Distributes all users from not_clustered_users_set to clusters
+    :param clusters: clustering - list of clusters
+    :param not_clustered_users_set: list of not-clustered users
+    :param lists_count: count of lists by which users have been clustered
+    :param max_cluster_size: maximal count of users in a cluster
+    :return: balanced clusters
+    """
+
+    # Sort clusters by ascending of the items count in them
+    clusters = sorted(clusters, key=lambda c: len(c))
+
+    while len(not_clustered_users_set) > 0:
+
+        # For each user, find it's distance value for each cluster
+        users_mutual_distances_in_clusters = {
+            user.get_id(): {cluster_index: avg(get_average_mutual_distances(clusters[cluster_index] + [user], lists_count))
+                            for cluster_index in range(0, len(clusters)) if
+                            not is_cluster_full(clusters[cluster_index], max_cluster_size)}
+            for user in not_clustered_users_set}
+
+        # Put suitable user in the smallest cluster
+        for cluster_index in range(0, len(clusters)):
+
+            if not is_cluster_full(clusters[cluster_index], max_cluster_size):
+
+                suitable_user_id, max_user_distance = None, -100
+
+                # Find id of the suitable user for the cluster
+                for user_id, clusters_distances in users_mutual_distances_in_clusters.items():
+                    for user_cluster_index, user_distance in clusters_distances.items():
+
+                        print("User #%d; Distances in cluster #%s: %f" % (
+                            user_id, str([user.get_id() for user in clusters[user_cluster_index]]), user_distance))
+
+                        if cluster_index == user_cluster_index and user_distance > max_user_distance:
+                            suitable_user_id = user_id
+                            max_user_distance = user_distance
+                    print()
+
+                # Put it user to the cluster and escape from the cycle
+                if suitable_user_id:
+                    print("User #%d to cluster %s\n" %
+                          (suitable_user_id, str([user.get_id() for user in clusters[cluster_index]])))
+                    suitable_user = get_user_by_id(not_clustered_users_set, suitable_user_id)
+                    clusters[cluster_index].append(suitable_user)
+                    not_clustered_users_set.remove(suitable_user)
+                    break
+                else:
+                    raise ValueError("Error balancing clusters")
+
+    return clusters
 
 
 def get_user_by_id(users_set, user_id):
@@ -148,36 +183,6 @@ def get_user_by_id(users_set, user_id):
             return user
 
     return None
-
-
-def avg(lst):
-    if len(lst) == 0:
-        return 0
-
-    return sum(lst) / len(lst)
-
-
-def balance_after_clustering(clusters, not_clustered_users_set, lists_count, max_cluster_size):
-    if len(not_clustered_users_set) == 0:
-        return clusters
-
-    users_mutual_distances_in_clusters = {
-        user.get_id(): {cluster_index: avg(get_average_mutual_distances(clusters[cluster_index] + [user], lists_count))
-                        for cluster_index in range(0, len(clusters)) if
-                        not is_cluster_full(clusters[cluster_index], max_cluster_size)}
-        for user in not_clustered_users_set}
-
-    for user_id, user_distances in users_mutual_distances_in_clusters.items():
-
-        # Sorting by descending of the distance value (the best cluster index on the top)
-        user_distances = {cluster_index: value for cluster_index, value in sorted(user_distances.items())}
-
-        for cluster_index, distance in user_distances.items():
-            if not is_cluster_full(clusters[cluster_index], max_cluster_size):
-                clusters[cluster_index].append(get_user_by_id(not_clustered_users_set, user_id))
-                break
-
-    return clusters
 
 
 def experiment3(clusters_number, lists_count):
@@ -189,7 +194,7 @@ def experiment3(clusters_number, lists_count):
 
     while not is_all_clustered:
 
-        # Clustering
+        # Get clusterings by lists
         clusterings = cluster_users_using_kmeans(reader, clustered_users, clusters_number, lists_count)
 
         # Displaying info about the clustering (temporary)
@@ -238,8 +243,8 @@ def experiment3(clusters_number, lists_count):
     # Display final clusters metrics
     for user_set in result_clusters:
         metric = TeamMetric(set(user_set))
-        print(metric.get_final_metric_value())
+        print(metric)
 
-
+# TODO: Send to k-means for reclustering
 if __name__ == '__main__':
     experiment3(CLUSTERS_COUNT, 2)
