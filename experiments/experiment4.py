@@ -8,12 +8,12 @@ from utils.metrics import TeamDesiresMetric
 __author__ = 'Xomak'
 
 reader = DataReader()
-pc = PreferencesClustering.cluster(reader.get_all_users(), 4)
+pc = PreferencesClustering.cluster(reader.get_all_users(), 5)
 for current_set in pc:
     output = []
     for user in current_set:
         output.append(str(user))
     print(','.join(output))
     print(TeamDesiresMetric(current_set))
-print(Serializer.serialize(pc))
+Serializer.serialize_to_file(pc, "../web-visualiser/data.json")
 

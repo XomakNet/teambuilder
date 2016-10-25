@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title></title>
+    <script src="lib/jquery-3.1.1.min.js"></script>
+    <script src="lib/arbor.js"></script>
+    <script src="lib/main.js"></script>
+    <link rel="stylesheet" href="css/main.css">
+
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
+
+    <!-- Latest compiled and minified CSS -->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css"
+          integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+
+    <!-- Optional theme -->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap-theme.min.css"
+          integrity="sha384-rHyoN1iRsVXV4nD0JutlnGaslCJuC7uwjduW9SVrLvRYooPp2bWYgmgJQIXwl/Sp" crossorigin="anonymous">
+
+    <!-- Latest compiled and minified JavaScript -->
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"
+            integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa"
+            crossorigin="anonymous"></script>
+
+    <script>
+        var v;
+        $(document).ready(function () {
+            $.getJSON("data.json", function (data) {
+                v = Vizualizer("#teamsPanel", "#viewport", data);
+                v.init();
+            });
+        });
+    </script>
+</head>
+<body>
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-9">
+            <div class="viewportBlock">
+                <canvas id="viewport">
+
+                </canvas>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div id="settingPanel" class="panel panel-default">
+                <div class="panel-heading">
+                    <a class="panel-title" role="button" data-toggle="collapse" aria-controls="settingsBody"
+                       href="#settingsBody">Settings</a>
+                </div>
+                <div class="panel-body collapse" id="settingsBody">
+                    <div class="checkbox">
+                        <label>
+                            <input type="checkbox"> Show intercluster connections
+                        </label>
+                    </div>
+                    <div class="checkbox">
+                        <label>
+                            <input type="checkbox"> Show desires connections
+                        </label>
+                    </div>
+                    <div class="checkbox">
+                        <label>
+                            <input type="checkbox"> Show names
+                        </label>
+                    </div>
+                </div>
+            </div>
+            <div class="panel panel-default teams" id="teamsPanel">
+                <div class="panel-heading">
+                    <h3 class="panel-title">Team explorer</h3>
+                </div>
+                <div class="panel-body">
+                    <div class="panel panel-default teamBlock template">
+                        <div class="panel-heading">
+                            <div class="panel-title">
+                                Cluster
+                            </div><div class="teamButtons">
+                                <a class="btn btn-default">
+                                    <i class="glyphicon glyphicon-eye-open"></i>
+                                </a>
+                                <a class="btn btn-default" data-toggle="collapse" aria-controls="cluster1Members">
+                                    <i class="glyphicon glyphicon-user"></i>
+                                </a>
+                            </div>
+                        </div>
+                        <div class="panel-body">
+                            <ul class="metrics">
+                                <li class="finalMetric">Total metric <span
+                                        class="label label-info finalValue">Fin 0.58</span></li>
+                                <li class="listMetric"><span class="metricName">List 2</span><span
+                                        class="label label-primary finalValue">Fin 0.58</span> <span
+                                        class="label label-info averageValue">Avg 0.58</span> <span
+                                        class="label label-success thresholdValue">Thr 0.58</span>
+                                </li>
+                                <li class="desiresMetric">Desires <span
+                                        class="label label-primary finalValue">Fin 0.58</span></li>
+                            </ul>
+                            <ul class="teamMates collapse">
+                                <li>
+                                    <label>
+                                        <span class="userName"></span><input type="checkbox"/>
+                                    </label>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+</html>

@@ -8,6 +8,11 @@ __author__ = 'Xomak'
 class Serializer:
 
     @classmethod
+    def serialize_to_file(cls, sets_list, file):
+        with open(file, "w") as file:
+            file.write(cls.serialize(sets_list))
+
+    @classmethod
     def serialize(cls, sets_list):
         result = dict()
         users = []
