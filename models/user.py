@@ -9,7 +9,7 @@ class User:
     _lists = []
     _selected_people = []
 
-    def __init__(self, id, lists, selected_people, name = None):
+    def __init__(self, id, lists, selected_people, name):
         self._id = id
         self._name = name
         self._lists = lists
