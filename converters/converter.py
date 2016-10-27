@@ -45,6 +45,7 @@ def convert_users(input_filename, output_filename):
                         user_lists.append(normalized_list)
                     json_selected_people = json_data['selectedPeople']
                     current_user['lists'] = user_lists
+                    current_user['name'] = input_row[1]
                     current_user['selectedPeople'] = json_selected_people
                     output_json.append(current_user)
             json.dump(output_json, output_file)

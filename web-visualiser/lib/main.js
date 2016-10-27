@@ -79,10 +79,12 @@ function Vizualizer(panelId, canvasId, data) {
 
     var _addEdge = function(user1, user2, data) {
         if(_checkEdge(user1, user2, data)) {
-            var edges = sys.getEdges(user1, user2);
+            var userWithMinId = Math.min(user1, user2);
+            var userWithMaxId = Math.max(user1, user2);
+            var edges = sys.getEdges(userWithMinId, userWithMaxId);
             if (edges.length == 0) {
-                sys.addEdge(user1, user2, {"edges": []});
-                edges = sys.getEdges(user1, user2);
+                sys.addEdge(userWithMinId, userWithMaxId, {"edges": []});
+                edges = sys.getEdges(userWithMinId, userWithMaxId);
             }
             edges[0].data.edges.push(data);
         }
@@ -209,9 +211,9 @@ function Vizualizer(panelId, canvasId, data) {
 function Renderer(canvas, visualizer) {
     var system;
     var ctx = canvas.getContext('2d');
-    var nodeWidth = 50;
+    var nodeWidth = 100;
     var edgeBaseWidth = 10;
-    var nodeHeight = 50;
+    var nodeHeight = 70;
     var bezierBase = 50;
 
     var _findSuitableFontSize = function(textParts, width) {
