@@ -27,8 +27,16 @@
         var v;
         $(document).ready(function () {
             $.getJSON("data.json", function (data) {
-                v = Vizualizer("#teamsPanel", "#viewport", data);
+                v = Vizualizer("#viewport", data);
+
                 v.init();
+                var settings = SettingsPanel("#settingsPanel", v);
+                var teams = TeamsPanel("#teamsPanel", v);
+                setTimeout(function () {
+//                    v.setShowingLists([0,1]);
+//                    v.setShowingInterclusterConnections(true);
+                }, 1000);
+
             });
         });
     </script>
@@ -44,7 +52,7 @@
             </div>
         </div>
         <div class="col-md-3">
-            <div id="settingPanel" class="panel panel-default">
+            <div id="settingsPanel" class="panel panel-default">
                 <div class="panel-heading">
                     <a class="panel-title" role="button" data-toggle="collapse" aria-controls="settingsBody"
                        href="#settingsBody">Settings</a>
@@ -52,18 +60,26 @@
                 <div class="panel-body collapse" id="settingsBody">
                     <div class="checkbox">
                         <label>
-                            <input type="checkbox"> Show intercluster connections
+                            <input type="checkbox" name="showInterclusterConnections"> Show intercluster connections
                         </label>
                     </div>
                     <div class="checkbox">
                         <label>
-                            <input type="checkbox"> Show desires connections
+                            <input type="checkbox" name="showDesires"> Show desires connections
                         </label>
                     </div>
                     <div class="checkbox">
                         <label>
-                            <input type="checkbox"> Show names
+                            <input type="checkbox" name="showNames"> Show names
                         </label>
+                    </div>
+                    <hr>
+                    <div class="lists">
+                        <div class="checkbox listCheckbox template">
+                            <label>
+                                <input type="checkbox"><span class="listTitle"></span>
+                            </label>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -76,7 +92,8 @@
                         <div class="panel-heading">
                             <div class="panel-title">
                                 Cluster
-                            </div><div class="teamButtons">
+                            </div>
+                            <div class="teamButtons">
                                 <a class="btn btn-default">
                                     <i class="glyphicon glyphicon-eye-open"></i>
                                 </a>
