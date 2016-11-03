@@ -57,8 +57,25 @@ function TeamsPanel(panelId, visualiser) {
     var panel = $(panelId);
     var _metricsPrecision = 2;
     var data = visualiser.getData();
+
+    var _showUsersClass = "glyphicon-eye-close";
+    var _hideUsersClass = "glyphicon-eye-open";
+
+    var _addUsers = function(team, block) {
+        var templateUser = block.find(".template");
+
+        var teamUsersIds = team.users_ids;
+        for(var teamUserIndex in teamUsersIds) {
+            var userId = teamUsersIds[teamUserIndex];
+            var user = visualiser.getUserById(userId);
+            var userListItem = templateUser.clone();
+            userListItem.removeClass("template");
+            userListItem.find(".userName").text(user.name ? user.name : user.id);
+            block.append(userListItem);
+        }
+    }
+
     var _createAddTeamBlock = function (team) {
-        console.log(team.metric);
         var template = panel.find(".template.teamBlock");
         var teamBlock = template.clone();
         teamBlock.find(".panel-title").text("Cluster #" + team.id);
@@ -91,9 +108,20 @@ function TeamsPanel(panelId, visualiser) {
             metricsBlock.append(listMetricBlock);
         }
 
-        for (var userIdIndex in team.user_ids) {
-            var userId = team.user_ids[userIdIndex];
-        }
+        var usersPanel = teamBlock.find(".teamMates");
+        var showUsersButton = teamBlock.find(".showUsersButton");
+        showUsersButton.click(function() {
+            var icon = showUsersButton.find("i");
+            if(usersPanel.hasClass("in")) {
+                showUsersButton.find("i").removeClass(_showUsersClass).addClass(_hideUsersClass);
+            } else {
+                showUsersButton.find("i").removeClass(_hideUsersClass).addClass(_showUsersClass);
+
+            }
+            usersPanel.collapse('toggle');
+        });
+
+        _addUsers(team, usersPanel);
         panel.children(".panel-body").append(teamBlock);
     }
 
@@ -251,6 +279,9 @@ function Vizualizer(canvasId, data) {
         },
         getNegativeThreshold: function () {
             return negativeThreshold
+        },
+        getUserById: function(id) {
+            return _getUserById(id);
         },
         setShowingLists: function (listsIds) {
             listsToShow = listsIds;
