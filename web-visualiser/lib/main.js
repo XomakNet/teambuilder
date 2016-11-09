@@ -47,6 +47,10 @@ function SettingsPanel(settingsPanelId, visualiser) {
         settingsPanel.find("input[name='showDesires']").change(function () {
             visualiser.setShowingDesires($(this).is(':checked'));
         });
+
+        settingsPanel.find("input[name='showConnectionsToHiddenUsers']").change(function () {
+            visualiser.setShowingConnectionsToHidden($(this).is(':checked'));
+        });
         _initListsPanel();
     };
 
@@ -58,20 +62,59 @@ function TeamsPanel(panelId, visualiser) {
     var _metricsPrecision = 2;
     var data = visualiser.getData();
 
-    var _showUsersClass = "glyphicon-eye-close";
-    var _hideUsersClass = "glyphicon-eye-open";
+    var _showUsersClass = "glyphicon-plus";
+    var _hideUsersClass = "glyphicon-minus";
 
-    var _addUsers = function(team, block) {
+    var _showUsersOnGraphClass = "glyphicon-eye-close";
+    var _hideUsersOnGraphClass = "glyphicon-eye-open";
+
+    var usersInputs = [];
+
+
+    var _userCheckboxHandler = function () {
+        var userId = parseInt($(this).attr("data-user-id"));
+        _showUser(userId, $(this).is(":checked"));
+
+    }
+
+    var _showUser = function (userId, shouldShow) {
+        var showingUserIds = visualiser.getShowingUsersIds();
+        var index = showingUserIds.indexOf(userId);
+        if (index != -1 && !shouldShow) {
+            showingUserIds.splice(index, 1);
+        } else if (shouldShow) {
+            showingUserIds.push(userId);
+        }
+        visualiser.setShowingUsersIds(showingUserIds);
+    }
+
+    var _addUsers = function (team, block) {
         var templateUser = block.find(".template");
 
         var teamUsersIds = team.users_ids;
-        for(var teamUserIndex in teamUsersIds) {
+        for (var teamUserIndex in teamUsersIds) {
             var userId = teamUsersIds[teamUserIndex];
             var user = visualiser.getUserById(userId);
             var userListItem = templateUser.clone();
             userListItem.removeClass("template");
             userListItem.find(".userName").text(user.name ? user.name : user.id);
+            var checkbox = userListItem.find("input");
+            checkbox.attr("data-user-id", user.id);
+            checkbox.change(_userCheckboxHandler);
+            usersInputs[user.id] = checkbox;
             block.append(userListItem);
+        }
+    }
+
+    var _refreshUsersCheckboxes = function () {
+        var showingUserIds = visualiser.getShowingUsersIds();
+        for (var userId in usersInputs) {
+            var userId = parseInt(userId);
+            if (showingUserIds.indexOf(userId) == -1) {
+                usersInputs[userId].prop("checked", false);
+            } else {
+                usersInputs[userId].prop("checked", true);
+            }
         }
     }
 
@@ -110,15 +153,42 @@ function TeamsPanel(panelId, visualiser) {
 
         var usersPanel = teamBlock.find(".teamMates");
         var showUsersButton = teamBlock.find(".showUsersButton");
-        showUsersButton.click(function() {
+        showUsersButton.click(function () {
             var icon = showUsersButton.find("i");
-            if(usersPanel.hasClass("in")) {
-                showUsersButton.find("i").removeClass(_showUsersClass).addClass(_hideUsersClass);
-            } else {
+            if (usersPanel.hasClass("in")) {
                 showUsersButton.find("i").removeClass(_hideUsersClass).addClass(_showUsersClass);
+            } else {
+
+                showUsersButton.find("i").removeClass(_showUsersClass).addClass(_hideUsersClass);
 
             }
             usersPanel.collapse('toggle');
+        });
+
+        var showUsersOnGraphButton = teamBlock.find(".showUsersOnGraphButton");
+        showUsersOnGraphButton.click(function () {
+            var areShown = false;
+            teamBlock.find("input").each(function () {
+                if ($(this).is(":checked")) {
+                    areShown = true;
+                }
+            });
+
+            for (var userIdIndex in team.users_ids) {
+                _showUser(team.users_ids[userIdIndex], !areShown);
+            }
+            teamBlock.find("input").each(function () {
+                $(this).prop("checked", !areShown);
+            });
+            var icon = showUsersOnGraphButton.find("i");
+            if (areShown) {
+                icon.removeClass(_hideUsersOnGraphClass).addClass(_showUsersOnGraphClass);
+            } else {
+                icon.removeClass(_showUsersOnGraphClass).addClass(_hideUsersOnGraphClass);
+
+
+            }
+
         });
 
         _addUsers(team, usersPanel);
@@ -128,6 +198,7 @@ function TeamsPanel(panelId, visualiser) {
     for (var clusterKey in data.clusters) {
         _createAddTeamBlock(data.clusters[clusterKey]);
     }
+    _refreshUsersCheckboxes();
 }
 
 function Vizualizer(canvasId, data) {
@@ -144,6 +215,8 @@ function Vizualizer(canvasId, data) {
     var showDesires = false;
     var showNames = false;
     var showInterClusterConnections = false;
+    var usersToShow = [];
+    var showConnectionsToHidden = false;
     var sys;
 
 
@@ -152,6 +225,8 @@ function Vizualizer(canvasId, data) {
             var user = data.users[userKey];
             //user.name = "Имя Фамильевич";
             //console.log("Adding "+user.id)
+            user.id = parseInt(user.id);
+            usersToShow.push(user.id);
             sys.addNode(user.id, user);
         }
     }
@@ -182,6 +257,12 @@ function Vizualizer(canvasId, data) {
     var _checkEdge = function (user1Id, user2Id, data) {
         var user1 = _getUserById(user1Id);
         var user2 = _getUserById(user2Id);
+        var showUser1 = usersToShow.indexOf(user1Id) != -1;
+        var showUser2 = usersToShow.indexOf(user2Id) != -1;
+        if (!((showUser1 && showUser2) || ((showUser1 || showUser2) && showConnectionsToHidden))) {
+            return false;
+        }
+
         if (!showInterClusterConnections && user1.cluster_id != user2.cluster_id) {
             return false;
         }
@@ -280,7 +361,7 @@ function Vizualizer(canvasId, data) {
         getNegativeThreshold: function () {
             return negativeThreshold
         },
-        getUserById: function(id) {
+        getUserById: function (id) {
             return _getUserById(id);
         },
         setShowingLists: function (listsIds) {
@@ -298,6 +379,19 @@ function Vizualizer(canvasId, data) {
         setShowingNames: function (shouldShow) {
             showNames = shouldShow;
             sys.renderer.redraw();
+        },
+        setShowingConnectionsToHidden: function (shouldShow) {
+            showConnectionsToHidden = shouldShow;
+            _refreshEdges();
+            sys.renderer.redraw();
+        },
+        setShowingUsersIds: function (ids) {
+            usersToShow = ids;
+            _refreshEdges();
+            sys.renderer.redraw();
+        },
+        getShowingUsersIds: function () {
+            return usersToShow.slice();
         },
         getShowingList: function () {
             return listsToShow.slice();
