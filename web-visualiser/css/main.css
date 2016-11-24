@@ -11,5 +11,5 @@
 .teams .panel-title {display: inline-block; width: 50%; vertical-align: middle;}
 .teams > .panel-body {overflow-y:  scroll; height: 100px;}
 .teamButtons {display: inline-block; width: 50%; text-align: right;}
-.template{display: none;}
+.template{display: none !important;}
 .teamBlock .panel-title {color: black;}
