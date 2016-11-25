@@ -1,0 +1,15 @@
+/*.viewportBlock{display: inline-block; width: 75%;}*/
+/*#teamsPanel{display: inline-block; width: 25%; vertical-align: top;}*/
+/*#viewport {width: 100%;}*/
+.metrics {list-style: none; padding: 0px;}
+.metrics li {display: block;}
+.metrics li span.label {float: right;}
+.teamMates {list-style: none; padding: 0px;}
+.teamMates li {display: block;}
+.teamMates label {display: block;}
+.teamMates input {float: right;}
+.teams .panel-title {display: inline-block; width: 50%; vertical-align: middle;}
+.teams > .panel-body {overflow-y:  scroll; height: 100px;}
+.teamButtons {display: inline-block; width: 50%; text-align: right;}
+.template{display: none !important;}
+.teamBlock .panel-title {color: black;}

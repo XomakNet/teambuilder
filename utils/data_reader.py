@@ -10,6 +10,7 @@ class DataFields:
     lists = "lists"
     user_id = "id"
     people = "selectedPeople"
+    name = "name"
 
 
 # noinspection PyAttributeOutsideInit
@@ -50,7 +51,7 @@ class DataReader:
 
     def _get_user_by_index(self, index: int) -> User:
         user_dict = self._data[index]
-        u = User(int(user_dict[DataFields.user_id]), user_dict[DataFields.lists], set())
+        u = User(int(user_dict[DataFields.user_id]), user_dict[DataFields.lists], set(), user_dict[DataFields.name])
         return u
 
     def get_user_id_by_index(self, index: int) -> User:

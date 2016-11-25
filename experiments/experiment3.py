@@ -1,7 +1,7 @@
 from sklearn.cluster import KMeans
 from math import *
 from utils.data_reader import DataReader
-from utils.metrics import calculate_set_metrics, print_metrics
+from utils.metrics import TeamMetric
 from utils.visualization import users_index_sets_to_users_sets, show_users_sets
 
 CLUSTERS_COUNT = 5
@@ -167,12 +167,9 @@ def experiment3(clusters_number, lists_count):
     show_users_sets(result_clusters)
 
     # Display final clusters metrics
-    for list_number in range(0, lists_count):
-        print("Metrics by criteria #%d:" % (list_number + 1))
-        for user_set in result_clusters:
-            m = calculate_set_metrics(user_set, vectors_ids=[list_number], allow_relations=True)
-            print_metrics(m)
-
+    for user_set in result_clusters:
+        metric = TeamMetric(user_set)
+        print(metric)
 
 if __name__ == '__main__':
     experiment3(CLUSTERS_COUNT, 2)
