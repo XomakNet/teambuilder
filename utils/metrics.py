@@ -4,8 +4,8 @@ __author__ = 'Xomak'
 
 
 class TeamMetric:
-    _list_metric_weight = 1
-    _desires_metric_weight = 0
+    _list_metric_weight = 0.5
+    _desires_metric_weight = 0.5
 
     def __init__(self, users_set):
         self._lists_count = len(next(iter(users_set)).get_lists())  # Kostiyl' was suggested by Kostya

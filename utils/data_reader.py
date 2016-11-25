@@ -51,7 +51,8 @@ class DataReader:
 
     def _get_user_by_index(self, index: int) -> User:
         user_dict = self._data[index]
-        u = User(int(user_dict[DataFields.user_id]), user_dict[DataFields.lists], set(), user_dict[DataFields.name])
+        name = user_dict[DataFields.name] if DataFields.name in user_dict else None
+        u = User(int(user_dict[DataFields.user_id]), user_dict[DataFields.lists], set(), name)
         return u
 
     def get_user_id_by_index(self, index: int) -> User:
