@@ -22,8 +22,12 @@ def get_average_mutual_distances(cluster, lists_count):
     Calculate normalized average mutual distances for each user in a cluster
     :param cluster: list of users, which where grouped in cluster
     :param lists_count: count of lists, by which we're clustering
-    :return:
+    :return: list of values, each value represents average mutual distance to other users for user from cluster
     """
+
+    if len(cluster) <= 1:
+        raise ValueError("Error getting average mutual distances for the cluster: cluster size less or equal 1")
+
     users_mutual_distances = [0 for user in cluster]
 
     for user_number_1 in range(0, len(cluster) - 1):
@@ -51,7 +55,4 @@ def avg(lst):
 
     return sum(lst) / len(lst)
 
-
-def is_cluster_full(cluster, max_cluster_size):
-    return len(cluster) >= max_cluster_size
 

@@ -8,15 +8,20 @@ class TeamMetric:
     _desires_metric_weight = 0
 
     def __init__(self, users_set):
-        self._lists_count = len(next(iter(users_set)).get_lists())  # Kostiyl' was suggested by Kostya
-        self._lists_metrics = []
+        if len(users_set) != 0:
 
-        for list_id in range(0, self._lists_count):
-            self._lists_metrics.append(TeamListMetric(users_set, list_id))
+            self._lists_count = len(next(iter(users_set)).get_lists())  # Kostiyl' was suggested by Kostya
+            self._lists_metrics = []
 
-        self._desires_metric = TeamDesiresMetric(users_set)
+            for list_id in range(0, self._lists_count):
+                self._lists_metrics.append(TeamListMetric(users_set, list_id))
 
-        self._calc_final_metric_value()
+            self._desires_metric = TeamDesiresMetric(users_set)
+
+            self._calc_final_metric_value()
+
+        else:
+            raise ValueError("Error calculating final metric: users_set is empty")
 
     def _calc_final_metric_value(self):
         """
