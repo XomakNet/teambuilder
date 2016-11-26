@@ -1,10 +1,30 @@
 from math import ceil
+from typing import List
+from typing import Set
+
+from models.user import User
 
 __author__ = 'Xomak'
 
 
 class PreferencesClustering:
     DEBUG = False
+
+    def __init__(self, users: Set[User], teams_number: int):
+        """
+        Instantiates algorithms.
+        :param users: Set of users
+        :param teams_number: Required teams number
+        """
+        self.users = users
+        self.teams_number = teams_number
+
+    def clusterize(self) -> List[Set[User]]:
+        """
+        Performs clustering
+        :return: List of sets of users
+        """
+        return self.__class__.cluster(self.users, self.teams_number)
 
     @classmethod
     def _construct_graph(cls, users):
