@@ -66,10 +66,10 @@ class Balancer:
         worst_member_result = 0
         for member in team:
             member_result = self.get_affinity_to_all(member, team)
-            if worst_member is None or worst_member_result < member_result:
+            if worst_member is None or member_result < worst_member_result:
                 worst_member = member
                 worst_member_result = member_result
-        return worst_member
+        return worst_member, worst_member_result
 
     def find_too_big_team(self) -> Set[User]:
         """
@@ -123,12 +123,31 @@ class Balancer:
             big_team = self.find_too_big_team()
             if big_team is not None:
                 while len(big_team) != self.team_size:
-                    worst_member = self.get_worst_member(big_team)
+                    worst_member, worst_member_result = self.get_worst_member(big_team)
                     big_team.remove(worst_member)
                     odd_members.add(worst_member)
             else:
                 has_too_big_teams = False
         return odd_members
+
+    def cut_worst_from_full_teams(self):
+        """
+        Considers all full teams and cuts member with the worst connectivity
+        :return: Worst member
+        """
+        worst_member = None
+        worst_member_result = 0
+        worst_member_team = None
+        for team in self.teams:
+            if len(team) == self.team_size:
+                current_worst_member, current_worst_result = self.get_worst_member(team)
+                if worst_member is None or current_worst_result < worst_member_result:
+                    worst_member_team = team
+                    worst_member = current_worst_member
+                    worst_member_result = current_worst_result
+        if worst_member is not None:
+            worst_member_team.remove(worst_member)
+        return worst_member
 
     def populate_little_teams_with(self, members: Set[User]) -> None:
         """
@@ -147,5 +166,9 @@ class Balancer:
                         most_suitable_member_result = member_result
                         most_suitable_member = member
                 members.remove(most_suitable_member)
+                if most_suitable_member is None:
+                    most_suitable_member = self.cut_worst_from_full_teams()
+                else:
+                    members.remove(most_suitable_member)
                 team.append(most_suitable_member)
 

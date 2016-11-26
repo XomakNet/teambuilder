@@ -3,10 +3,11 @@ from sklearn.cluster import AgglomerativeClustering
 
 from experiments.experiment5.balancer import Balancer
 from models.user import User
-from utils.data_reader import DataReader
-from utils.json_serializer import Serializer
 from utils.metrics import normalized_vector_distance
 from utils.visualization import users_index_sets_to_users_sets, clusters_list_to_users_index_sets
+from experiments.experiment5.users_agglomerative_clustering import UsersAgglomerativeClustering
+from utils.data_reader import DataReader
+from utils.json_serializer import Serializer
 
 __author__ = 'Xomak'
 
@@ -68,4 +69,6 @@ r = agg.fit_predict(users_list)
 sets = users_index_sets_to_users_sets(clusters_list_to_users_index_sets(r), reader)
 b = Balancer(3, sets, get_distance_between)
 b.balance()
+clustering_alg = UsersAgglomerativeClustering(reader, 3)
+sets = clustering_alg.clusterize()
 Serializer.serialize_to_file(sets, "../web-visualiser/data.json")
