@@ -14,22 +14,40 @@ class ClusteringTools:
     SPECTRAL = "spectral"
 
     @classmethod
-    def build_clustering_tool(cls, clusters_count, tool_type):
+    def build_clustering_tool(cls, clusters_count: int, max_cluster_size: int, tool_type: str):
+        """
+
+        :param clusters_count:
+        :param max_cluster_size:
+        :param tool_type:
+        :return:
+        """
         if tool_type == cls.KMEANS:
             return cls._build_kmeans_tool(clusters_count)
         elif tool_type == cls.SPECTRAL:
-            return cls._build_spectral_tool(clusters_count)
+            return cls._build_spectral_tool(clusters_count, max_cluster_size)
         else:
-            return cls._build_kmeans_tool(clusters_count)
+            raise ValueError("Error creating clustering tool: wrong tool_type %s" % tool_type)
 
     @classmethod
     def _build_kmeans_tool(cls, clusters_count):
+        """
+
+        :param clusters_count:
+        :return:
+        """
         tool = KMeans(clusters_count)
         return tool
 
     @classmethod
-    def _build_spectral_tool(cls, clusters_count):
-        tool = SpectralClustering(clusters_count)
+    def _build_spectral_tool(cls, clusters_count, max_cluster_size):
+        """
+
+        :param clusters_count:
+        :param max_cluster_size:
+        :return:
+        """
+        tool = SpectralClustering(clusters_count, affinity='nearest_neighbors', n_neighbors=max_cluster_size)
         return tool
 
 
@@ -52,56 +70,6 @@ def cluster_users(clustering_tool, reader: DataReader, clustered_users: List[Use
     for list_number in range(0, lists_count):
         features_matrix = get_matrix_by_list_for_not_clustered_users(all_users, list_number, clustered_users)
         clusters_list = clustering_tool.fit_predict(features_matrix)
-        clustering.add_clustering_for_list(convert_clusters_list_to_users_sets(reader, clusters_list, clustered_users),
-                                           list_number)
-
-    return clustering
-
-
-def cluster_users_using_kmeans(reader: DataReader, clustered_users: List[User], clusters_number: int,
-                               lists_count: int) -> Clusterings:
-    """
-    Cluster users by lists with numbers from 0 to given lists_count.
-    Users are stiling from the reader object.
-    In result clusters appears all user from the reader except users in clustered_users.
-    :param reader: DataReader object
-    :param clustered_users: list of users that won't appear in clusterings
-    :param clusters_number: expected number of clusters
-    :param lists_count: cluster by lists from 1 to lists_count
-    :return: Clusterings object, representing clusterings by different lists
-    """
-    kmeans = KMeans(n_clusters=clusters_number)
-    clustering = Clusterings(clusters_number)
-    all_users = reader.get_all_users()
-
-    for list_number in range(0, lists_count):
-        features_matrix = get_matrix_by_list_for_not_clustered_users(all_users, list_number, clustered_users)
-        clusters_list = kmeans.fit_predict(features_matrix)
-        clustering.add_clustering_for_list(convert_clusters_list_to_users_sets(reader, clusters_list, clustered_users),
-                                           list_number)
-
-    return clustering
-
-
-def cluster_users_using_spectral(reader: DataReader, clustered_users: List[User], clusters_number: int,
-                                 lists_count: int) -> Clusterings:
-    """
-    Cluster users by lists with numbers from 0 to given lists_count.
-    Users are stiling from the reader object.
-    In result clusters appears all user from the reader except users in clustered_users.
-    :param reader: DataReader object
-    :param clustered_users: list of users that won't appear in clusterings
-    :param clusters_number: expected number of clusters
-    :param lists_count: cluster by lists from 1 to lists_count
-    :return: Clusterings object, representing clusterings by different lists
-    """
-    spectral = SpectralClustering(n_clusters=clusters_number)
-    clustering = Clusterings(clusters_number)
-    all_users = reader.get_all_users()
-
-    for list_number in range(0, lists_count):
-        features_matrix = get_matrix_by_list_for_not_clustered_users(all_users, list_number, clustered_users)
-        clusters_list = spectral.fit_predict(features_matrix)
         clustering.add_clustering_for_list(convert_clusters_list_to_users_sets(reader, clusters_list, clustered_users),
                                            list_number)
 
@@ -215,10 +183,10 @@ def balance_after_clustering(clusters, not_clustered_users_set, lists_count, max
     :return: balanced clusters
     """
 
-    # Sort clusters by ascending of the items count in them
-    clusters = sorted(clusters, key=lambda c: len(c))
-
     while len(not_clustered_users_set) > 0:
+
+        # Sort clusters by ascending of the items count in them
+        clusters = sorted(clusters, key=lambda c: len(c))
 
         # For each user, find it's distance value for each cluster
         users_mutual_distances_in_clusters = {
