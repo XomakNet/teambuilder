@@ -165,7 +165,6 @@ class Balancer:
                     if most_suitable_member is None or member_result > most_suitable_member_result:
                         most_suitable_member_result = member_result
                         most_suitable_member = member
-                members.remove(most_suitable_member)
                 if most_suitable_member is None:
                     most_suitable_member = self.cut_worst_from_full_teams()
                 else:

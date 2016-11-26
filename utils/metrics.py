@@ -11,31 +11,59 @@ from models.user import User
 __author__ = 'Xomak'
 
 
+class TeamMetric:
+    pass
+
+
+class MetricTypes:
+    LISTS = "lists"
+    DESIRES = "desires"
+    COMMON = "common"
+
+
 class ClusteringMetric:
 
     balance_weight = 0.5
     average_weight = 0.5
 
-    def __init__(self, users_sets: List[Set[User]]):
+    def __init__(self, users_sets: List[Set[User]], metric_type=MetricTypes.COMMON):
+
+        self.users_sets = users_sets
+        self.metric_type = metric_type
+
+        self._calculate_metric()
+
+    def _get_team_metric_value(self, team_metric: TeamMetric):
+        if self.metric_type == MetricTypes.COMMON:
+            return team_metric.get_final_metric_value()
+        elif self.metric_type == MetricTypes.DESIRES:
+            return team_metric.get_desires_metric_value()
+        elif self.metric_type == MetricTypes.LISTS:
+            return team_metric.get_lists_metric_value()
+        else:
+            raise ValueError("Wrong metric type '%s'" % str(self.metric_type))
+
+    def _calculate_metric(self):
 
         self.sets_metrics = []
         self.total_users_count = 0
         self.balance_metric = 0
 
-        for user_set in users_sets:
+        for user_set in self.users_sets:
             self.total_users_count += len(user_set)
 
-        self.team_size = int(ceil(self.total_users_count / len(users_sets)))
+        self.team_size = int(ceil(self.total_users_count / len(self.users_sets)))
         overload_members_count = 0
         lack_members_count = 0
 
         total_metrics = []
 
-        for user_set in users_sets:
+        for user_set in self.users_sets:
             set_metric = TeamMetric(user_set)
 
             self.sets_metrics.append(set_metric)
-            total_metrics.append(set_metric.get_final_metric_value())
+
+            total_metrics.append(self._get_team_metric_value(set_metric))
 
             overload = len(user_set) - self.team_size
             lack = self.team_size - 1 - len(user_set)
@@ -51,6 +79,12 @@ class ClusteringMetric:
 
     def get_final_metric(self):
         return self.balance_metric*self.balance_weight + self.average_metric*self.average_weight
+
+    def get_average_metric(self):
+        return self.average_metric
+
+    def get_balance_metric(self):
+        return self.balance_metric
 
     def __str__(self):
         return "Average: {}, min: {}, max: {}, balance: {}".format(self.average_metric, self.min_metric,
@@ -148,6 +182,12 @@ class TeamMetric:
         :return: TeamDesiresMetric object
         """
         return self._desires_metric
+
+    def get_desires_metric_value(self):
+        return self._desires_metric.get_final_metric_value()
+
+    def get_lists_metric_value(self):
+        return mean(list(map(lambda list_metric: list_metric.get_final_metric_value(), self._lists_metrics)))
 
 
 class TeamDesiresMetric:
