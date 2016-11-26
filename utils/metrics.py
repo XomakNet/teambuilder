@@ -1,6 +1,60 @@
+from typing import List
+from typing import Set
+
+from math import ceil
+
+from numpy import mean
 from sklearn.metrics.pairwise import euclidean_distances
 
+from models.user import User
+
 __author__ = 'Xomak'
+
+
+class ClusteringMetric:
+
+    balance_weight = 0.5
+    average_weight = 0.5
+
+    def __init__(self, users_sets: List[Set[User]]):
+
+        self.sets_metrics = []
+        self.total_users_count = 0
+        self.balance_metric = 0
+
+        for user_set in users_sets:
+            self.total_users_count += len(user_set)
+
+        self.team_size = int(ceil(self.total_users_count / len(users_sets)))
+        overload_members_count = 0
+        lack_members_count = 0
+
+        total_metrics = []
+
+        for user_set in users_sets:
+            set_metric = TeamMetric(user_set)
+
+            self.sets_metrics.append(set_metric)
+            total_metrics.append(set_metric.get_final_metric_value())
+
+            overload = len(user_set) - self.team_size
+            lack = self.team_size - 1 - len(user_set)
+            if overload > 0:
+                overload_members_count += overload
+            if lack > 0:
+                lack_members_count += lack
+
+        self.balance_metric = 1 - (lack_members_count + overload_members_count)/self.total_users_count
+        self.average_metric = mean(total_metrics)
+        self.min_metric = min(total_metrics)
+        self.max_metric = max(total_metrics)
+
+    def get_final_metric(self):
+        return self.balance_metric*self.balance_weight + self.average_metric*self.average_weight
+
+    def __str__(self):
+        return "Average: {}, min: {}, max: {}, balance: {}".format(self.average_metric, self.min_metric,
+                                                                   self.max_metric, self.balance_metric)
 
 
 class TeamMetric:
