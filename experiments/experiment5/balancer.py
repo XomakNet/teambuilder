@@ -156,18 +156,22 @@ class Balancer:
         :param members: Members, which will be used (items will being removed, until there is little teams)
         :return:
         """
-        for team in self.teams:
-            if len(team) < self.team_size - 1:
-                most_suitable_member = None
-                most_suitable_member_result = 0
-                for member in members:
-                    member_result = self.get_affinity_to_all(member, team)
-                    if most_suitable_member is None or member_result > most_suitable_member_result:
-                        most_suitable_member_result = member_result
-                        most_suitable_member = member
-                if most_suitable_member is None:
-                    most_suitable_member = self.cut_worst_from_full_teams()
-                else:
-                    members.remove(most_suitable_member)
-                team.append(most_suitable_member)
+        small_team_exists = True
+        while small_team_exists:
+            small_team_exists = False
+            for team in self.teams:
+                if len(team) < self.team_size - 1:
+                    most_suitable_member = None
+                    most_suitable_member_result = 0
+                    for member in members:
+                        member_result = self.get_affinity_to_all(member, team)
+                        if most_suitable_member is None or member_result > most_suitable_member_result:
+                            most_suitable_member_result = member_result
+                            most_suitable_member = member
+                    if most_suitable_member is None:
+                        most_suitable_member = self.cut_worst_from_full_teams()
+                    else:
+                        members.remove(most_suitable_member)
+                    team.append(most_suitable_member)
+                    small_team_exists = True
 
