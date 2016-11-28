@@ -56,6 +56,12 @@ class ClusteringMetric:
         return "Average: {}, min: {}, max: {}, balance: {}".format(self.average_metric, self.min_metric,
                                                                    self.max_metric, self.balance_metric)
 
+    def get_average_desires_metric(self):
+        metrics = []
+        for metric in self.sets_metrics:
+            metrics.append(metric.get_desires_metric().get_final_metric_value())
+        return mean(metrics)
+
 
 class TeamMetric:
     _list_metric_weight = 0.5
