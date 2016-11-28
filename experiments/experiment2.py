@@ -2,7 +2,7 @@ from dask.tests.test_base import np
 from sklearn.cluster import KMeans
 
 from utils.data_reader import DataReader
-from utils.metrics import calculate_set_metrics, normalized_vector_distance, print_metrics
+from utils.metrics import normalized_vector_distance, TeamMetric
 from utils.output import OutputWriter, OutFiles
 from utils.visualization import clusters_list_to_users_index_sets, users_index_sets_to_users_sets, show_users_sets
 
@@ -71,9 +71,10 @@ def experiment2(clusters_number, lists_number):
             out.write_rewrite(OutFiles.centroids_custom if j == 0 else OutFiles.centroids_embedded, "")
             print("Metrics:")
             for user_set in sets:
-                m = calculate_set_metrics(user_set, vectors_ids=[i], allow_relations=True,
-                                          is_custom_centroids=(j == 0))
-                print_metrics(m)
+                m = TeamMetric(user_set)
+                # m = calculate_set_metrics(user_set, vectors_ids=[i], allow_relations=True,
+                #                           is_custom_centroids=(j == 0))
+                # print_metrics(m)
 
 
 if __name__ == '__main__':

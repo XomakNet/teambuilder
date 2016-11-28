@@ -1,3 +1,8 @@
+from typing import List
+from typing import Set
+
+from models.user import User
+
 __author__ = 'Xomak'
 
 
@@ -33,17 +38,17 @@ def show_users_sets(sets):
         print("%d) [%s]" % (i + 1, line))
 
 
-def users_index_sets_to_users_sets(users_index_sets, reader):
+def users_index_sets_to_users_sets(users_index_sets, reader) -> List[Set[User]]:
     """
     Converts set of users' indexes sets into set of users' set
     :param users_index_sets: Input set
     :param reader: Reader, which is used to get all information about user by index
-    :return: Set of sets of users
+    :return: List of sets of users
     """
     result = []
     for users_index_set in users_index_sets:
-        current = []
+        current = set()
         for user_index in users_index_set:
-            current.append(reader.get_user_by_index(user_index))
+            current.add(reader.get_user_by_index(user_index))
         result.append(current)
     return result
