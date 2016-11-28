@@ -1,9 +1,7 @@
-from math import ceil
-
 from experiments.experiment4.preferences_clustering import PreferencesClustering
 from utils.data_reader import DataReader
 from utils.json_serializer import Serializer
-from utils.metrics import TeamDesiresMetric
+from utils.metrics import TeamDesiresMetric, ClusteringMetric
 
 __author__ = 'Xomak'
 
@@ -16,5 +14,6 @@ for current_set in result:
         output.append(str(user))
     print(','.join(output))
     print(TeamDesiresMetric(current_set))
+print(ClusteringMetric(result).get_average_desires_metric())
 Serializer.serialize_to_file(result, "../web-visualiser/data.json")
 

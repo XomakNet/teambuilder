@@ -2,6 +2,7 @@ from math import ceil
 from typing import List
 from typing import Set
 
+from experiments.experiment5.balancer import Balancer
 from models.user import User
 
 __author__ = 'Xomak'
@@ -60,7 +61,7 @@ class PreferencesClustering:
         for user, node in nodes.items():
             sb = cls._construct_team(node, only_mutual)
             if len(sb) > 0:
-                cls._reduce_set(sb, team_size)
+                #cls._reduce_set(sb, team_size)
                 teams.append(sb)
 
     @classmethod
@@ -77,6 +78,15 @@ class PreferencesClustering:
                 sb.add(node)
                 node.set_not_free()
                 teams.append(sb)
+
+    @staticmethod
+    def get_distance_between_users(user1: User, user2: User):
+        result = 0
+        if user1 in user2.get_selected_people():
+            result += 0.5
+        if user2 in user1.get_selected_people():
+            result += 0.5
+        return result
 
     @classmethod
     def cluster(cls, users, teams_number):
@@ -95,8 +105,9 @@ class PreferencesClustering:
         cls._construct_teams(nodes, teams, team_size, True)
         cls._construct_teams(nodes, teams, team_size, False)
         cls._construct_teams_on_lonely_users(nodes, teams)
-        cls._balance_teams(nodes, teams, team_size, teams_number)
-        cls._divide_teams(teams, team_size, teams_number)
+
+        # cls._balance_teams(nodes, teams, team_size, teams_number)
+        # cls._divide_teams(teams, team_size, teams_number)
 
         result = []
         for team in teams:
@@ -104,6 +115,9 @@ class PreferencesClustering:
             for node in team:
                 new_team.add(node.get_user())
             result.append(new_team)
+
+        b = Balancer(teams_number, result, PreferencesClustering.get_distance_between_users)
+        b.balance()
         return result
 
     @classmethod
@@ -152,6 +166,8 @@ class PreferencesClustering:
             for current_set in teams:
                 current_length = len(current_set)
                 if current_length < max_team_size - 1 or (is_balanced and current_length < max_team_size):
+                    if cls.DEBUG:
+                        print("Trying to merge with {}".format(current_set))
                     needed_merge_size = max_team_size - current_length
                     set_to_merge = cls._find_set_to_merge_with(teams, current_set, nodes, needed_merge_size)
                     cls._merge_teams(teams, current_set, set_to_merge)
@@ -186,8 +202,6 @@ class PreferencesClustering:
         :return:
         """
         if len(teams) < required_teams_number:
-
-
             while len(teams) < required_teams_number:
                 poorest_members = cls._find_poorest_two(teams, max_team_size)
 
