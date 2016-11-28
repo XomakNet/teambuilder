@@ -51,4 +51,11 @@ def agglomerative_vs_pc(teams_number):
 
         print("{};{}".format(agglomerative, my))
 
-#agglomerative_vs_pc(5)
+
+def clusterize(filename, teams_number):
+    reader = DataReader(filename)
+    clustering_alg = UsersAgglomerativeClustering(reader, teams_number)
+    cl = clustering_alg.clusterize()
+    Serializer.serialize_to_file(cl, filename)
+
+clusterize("../data/users.json", 5)
