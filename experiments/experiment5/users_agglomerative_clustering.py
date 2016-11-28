@@ -30,7 +30,7 @@ class UsersAgglomerativeClustering:
         if lists_weights is not None and sum(lists_weights) > 1:
             raise ValueError("Sum of list weights is more than one.")
         self.desires_weight = desires_weight
-        self.linkage = "complete"
+        self.linkage = "average"
         self.reader = reader
         self.need_balance = need_balance
         self.lists_weight = lists_weights
