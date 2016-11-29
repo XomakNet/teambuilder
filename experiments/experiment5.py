@@ -32,24 +32,28 @@ def complete_vs_avg(teams_number):
         #Serializer.serialize_to_file(sets, "../web-visualiser/data.json")
 
 
+def clusterize_and_compare_by_desires(reader, teams_number, need_balance):
+    clustering_alg = UsersAgglomerativeClustering(reader, teams_number, desires_weight=1, need_balance=need_balance)
+    sets_agg = clustering_alg.clusterize()
+
+    agglomerative = ClusteringMetric(sets_agg).get_average_desires_metric()
+
+    pc = PreferencesClustering(reader.get_all_users(), teams_number, need_balance=need_balance)
+    sets_pc = pc.clusterize()
+    Serializer.serialize_to_file(sets_pc, "../web-visualiser/pc.json")
+    Serializer.serialize_to_file(sets_agg, "../web-visualiser/agg.json")
+    my = ClusteringMetric(sets_pc).get_average_desires_metric()
+
+    print("{};{}".format(agglomerative, my))
+
 def agglomerative_vs_pc(teams_number):
+    need_balance = False
 
     for variant in variants:
         reader = DataReader(variant)
 
-        clustering_alg = UsersAgglomerativeClustering(reader, teams_number, desires_weight=1)
-        sets_agg = clustering_alg.clusterize()
-
-        agglomerative = ClusteringMetric(sets_agg).get_average_desires_metric()
-
-        pc = PreferencesClustering(reader.get_all_users(), teams_number)
-        sets_pc = pc.clusterize()
-        if variant == "../data/users.json":
-            Serializer.serialize_to_file(sets_pc, "../web-visualiser/pc.json")
-            Serializer.serialize_to_file(sets_agg, "../web-visualiser/agg.json")
-        my = ClusteringMetric(sets_pc).get_average_desires_metric()
-
-        print("{};{}".format(agglomerative, my))
+        for teams_number in range(2, 10):
+            clusterize_and_compare_by_desires(reader, teams_number, need_balance)
 
 
 def clusterize(filename, teams_number):
@@ -58,4 +62,7 @@ def clusterize(filename, teams_number):
     cl = clustering_alg.clusterize()
     Serializer.serialize_to_file(cl, "../web-visualiser/data.json")
 
-clusterize("../data/users.json", 5)
+reader = DataReader("../data/ms-sne.json")
+#agglomerative_vs_pc(2)
+clusterize_and_compare_by_desires(reader,  2, True)
+#clusterize("../data/ms-sne.json", 2)
