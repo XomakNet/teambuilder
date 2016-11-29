@@ -157,18 +157,11 @@ def kick_user_from_cluster(cluster, lists_count):
     # Calculate special metric for each user - the smaller it is, the less suitable is a user for the clusters
     users_mutual_distances = get_average_mutual_distances(cluster, lists_count)
 
-    print("Min distance: %f" % min(users_mutual_distances))
-
     for user_index, user_distance in enumerate(users_mutual_distances):
         if user_distance == min(users_mutual_distances):
-            print("Kicked user %d" % cluster[user_index].get_id())
             cluster.remove(cluster[user_index])
             users_mutual_distances.remove(user_distance)
             break
-
-    users_mutual_distances = get_average_mutual_distances(cluster, lists_count)
-    for user_index, user_distance in enumerate(users_mutual_distances):
-        print("User #%d distance: %f; " % (cluster[user_index].get_id(), user_distance))
 
     return cluster
 
@@ -206,19 +199,13 @@ def balance_after_clustering(clusters, not_clustered_users_set, lists_count, max
                 for user_id, clusters_distances in users_mutual_distances_in_clusters.items():
                     for user_cluster_index, user_distance in clusters_distances.items():
 
-                        print("User #%d; Distances in cluster #%s: %f" % (
-                            user_id, str([user.get_id() for user in clusters[user_cluster_index]]), user_distance))
-
                         if cluster_index == user_cluster_index and user_distance > max_user_distance:
                             suitable_user_id = user_id
                             max_user_distance = user_distance
-                    print()
 
                 # Put it user to the cluster and
                 # escape from the cycle for recomputing mutual distances in clusters
                 if suitable_user_id:
-                    print("User #%d to cluster %s\n" %
-                          (suitable_user_id, str([user.get_id() for user in clusters[cluster_index]])))
                     suitable_user = get_user_by_id(not_clustered_users_set, suitable_user_id)
                     clusters[cluster_index].append(suitable_user)
                     not_clustered_users_set.remove(suitable_user)

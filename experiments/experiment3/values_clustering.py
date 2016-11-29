@@ -60,15 +60,8 @@ class ValuesClustering:
             clusterings = cu.cluster_users(clustering_tool, self.reader, clustered_users, remaining_clusters_number,
                                            lists_count)
 
-            # Displaying info about the clustering (temporary)
-            print("\nClustering by list %s" % 1)
-            show_users_sets(clusterings.get_clustering_by_list_number(0))
-            print("Clustering by list %s" % 2)
-            show_users_sets(clusterings.get_clustering_by_list_number(1))
-
             # Find the maximum common part of the clusters of the different lists
             new_cluster = clusterings.get_max_common_part_of_clusterings()
-            print("Common part: " + str([user.get_id() for user in new_cluster]))
 
             # Is it necessary to kick the user?
             while len(new_cluster) > max_cluster_size:
@@ -84,30 +77,21 @@ class ValuesClustering:
             # Check the terminal condition
             is_all_clustered = True if len(result_clusters) >= clusters_number else False
 
-        # Display clusters before balancing
-        print("\nClusters before balancing:")
-        show_users_sets(result_clusters)
-
         # Display clusters metrics
         for user_set in result_clusters:
             if len(user_set) != 0:
                 metric = TeamMetric(set(user_set))
-                print(metric.get_final_metric_value())
 
         # There are clusters with more than maximum users? Fix it.
         result_clusters = cu.balance_after_clustering(result_clusters,
                                                       cu.get_not_clustered_users_set(self.reader, clustered_users),
                                                       lists_count,
                                                       max_cluster_size)
-        # Display final clusters
-        print("\nFinal clusters:")
-        show_users_sets(result_clusters)
 
         # Calculate final clusters metrics
         final_metric_value = 0
         for user_set in result_clusters:
             metric = TeamMetric(set(user_set))
             final_metric_value += metric.get_final_metric_value()
-            print(metric)
 
         return {"clusters": result_clusters, "metric": final_metric_value}

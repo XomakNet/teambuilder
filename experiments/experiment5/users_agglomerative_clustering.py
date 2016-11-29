@@ -4,6 +4,7 @@ from numpy import zeros, ndarray
 from sklearn.cluster import AgglomerativeClustering
 
 from experiments.experiment5.balancer import Balancer
+from experiments.experiment7.balancer_2 import Balancer2
 from models.user import User
 from utils.data_reader import DataReader
 from utils.metrics import normalized_vector_distance
@@ -18,7 +19,7 @@ class UsersAgglomerativeClustering:
     """
 
     def __init__(self, reader: DataReader, teams_number: int, desires_weight: float=0.5,
-                 lists_weights: List[float]=None, need_balance: bool=True):
+                 lists_weights: List[float]=None, need_balance: bool=True, balancer=Balancer):
         """
         Instantiates algorithm of users' clustering
         :param reader: Reader instance
@@ -27,6 +28,7 @@ class UsersAgglomerativeClustering:
         :param lists_weights: Weights of lists. If empty, all lists will have same weight
         :param need_balance: Should teams be balanced
         """
+        self.balancer = balancer
         if lists_weights is not None and sum(lists_weights) > 1:
             raise ValueError("Sum of list weights is more than one.")
         self.desires_weight = desires_weight
@@ -118,6 +120,8 @@ class UsersAgglomerativeClustering:
         r = agg.fit_predict(users_list)
         sets = users_index_sets_to_users_sets(clusters_list_to_users_index_sets(r), self.reader)
         if self.need_balance:
-            b = Balancer(self.teams_number, sets, lambda user1, user2: self.get_affinity_between(user1, user2))
+            if self.balancer == Balancer2:
+                sets = [list(s) for s in sets]
+            b = self.balancer(self.teams_number, sets, lambda user1, user2: self.get_affinity_between(user1, user2))
             b.balance()
         return sets

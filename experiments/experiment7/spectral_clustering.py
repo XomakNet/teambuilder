@@ -106,8 +106,8 @@ class UsersSpectralClustering:
 
         agg = SpectralClustering(n_clusters=self.teams_number, affinity=self.get_affinity_matrix_element)
         r = agg.fit_predict(users_list)
-        sets = users_index_sets_to_users_sets(clusters_list_to_users_index_sets(r), self.reader)
+        clusters = [list(c) for c in users_index_sets_to_users_sets(clusters_list_to_users_index_sets(r), self.reader)]
         if self.need_balance:
-            b = Balancer2(self.teams_number, sets, lambda user1, user2: self.get_affinity_between(user1, user2))
-            sets = b.balance()
-        return sets
+            b = Balancer2(self.teams_number, clusters, lambda user1, user2: self.get_affinity_between(user1, user2))
+            clusters = b.balance()
+        return clusters

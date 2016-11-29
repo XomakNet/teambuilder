@@ -1,6 +1,8 @@
 from experiments.experiment3.values_clustering import ValuesClustering
 from experiments.experiment4.preferences_clustering import PreferencesClustering
+from experiments.experiment5.balancer import Balancer
 from experiments.experiment5.users_agglomerative_clustering import UsersAgglomerativeClustering
+from experiments.experiment7.balancer_2 import Balancer2
 from experiments.experiment7.spectral_clustering import UsersSpectralClustering
 from utils.clustering_utils import ClusteringTools
 from utils.data_reader import DataReader
@@ -28,9 +30,9 @@ class ResultHolder:
                     out_string = "%s %s %s\n" % (file_name, str(team_size), " ".join(teams_metrics[team_size]))
                     f.write(out_string)
 
-desires_weight = 0.5
+desires_weight = 1
 need_balance = True
-metric_type = MetricTypes.COMMON
+metric_type = MetricTypes.DESIRES
 data_files_names = ["../data/ms-sne_names.json", "../data/eltech-vector.json", "../data/users.json"]
 
 results = ResultHolder(data_files_names)
@@ -49,7 +51,7 @@ for data_file_name in data_files_names:
         results.add_metric_for(data_file_name, teams, ClusteringMetric(sets, metric_type).get_final_metric())
 
         # Agglomerative
-        clustering_alg = UsersAgglomerativeClustering(reader, teams, desires_weight=desires_weight, need_balance=need_balance)
+        clustering_alg = UsersAgglomerativeClustering(reader, teams, desires_weight=desires_weight, need_balance=need_balance, balancer=Balancer)
         sets = clustering_alg.clusterize()
         results.add_metric_for(data_file_name, teams, ClusteringMetric(sets, metric_type).get_final_metric())
 
@@ -59,7 +61,7 @@ for data_file_name in data_files_names:
         results.add_metric_for(data_file_name, teams, ClusteringMetric(sets, metric_type).get_final_metric())
 
         # Desires
-        clustering_alg = PreferencesClustering(reader.get_all_users(), teams)
+        clustering_alg = PreferencesClustering(reader.get_all_users(), teams, need_balance=need_balance)
         sets = clustering_alg.clusterize()
         results.add_metric_for(data_file_name, teams, ClusteringMetric(sets, metric_type).get_final_metric())
 
