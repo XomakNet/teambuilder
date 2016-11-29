@@ -11,12 +11,13 @@ __author__ = 'Xomak'
 class PreferencesClustering:
     DEBUG = False
 
-    def __init__(self, users: Set[User], teams_number: int):
+    def __init__(self, users: Set[User], teams_number: int, need_balance: bool=True):
         """
         Instantiates algorithms.
         :param users: Set of users
         :param teams_number: Required teams number
         """
+        self.need_balance = need_balance
         self.users = users
         self.teams_number = teams_number
 
@@ -25,7 +26,7 @@ class PreferencesClustering:
         Performs clustering
         :return: List of sets of users
         """
-        return self.__class__.cluster(self.users, self.teams_number)
+        return self.__class__.cluster(self.users, self.teams_number, self.need_balance)
 
     @classmethod
     def _construct_graph(cls, users):
@@ -89,9 +90,10 @@ class PreferencesClustering:
         return result
 
     @classmethod
-    def cluster(cls, users, teams_number):
+    def cluster(cls, users, teams_number, need_balance):
         """
         Divides users into teams_number teams
+        :param need_balance: It balancing required
         :param users: Set of users
         :param teams_number: Required teams number
         :return: List of sets of users
@@ -115,9 +117,9 @@ class PreferencesClustering:
             for node in team:
                 new_team.add(node.get_user())
             result.append(new_team)
-
-        b = Balancer(teams_number, result, PreferencesClustering.get_distance_between_users)
-        b.balance()
+        if need_balance:
+            b = Balancer(teams_number, result, PreferencesClustering.get_distance_between_users)
+            b.balance()
         return result
 
     @classmethod

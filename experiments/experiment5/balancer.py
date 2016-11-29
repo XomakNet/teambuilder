@@ -62,8 +62,11 @@ class Balancer:
 
     def populate_new_teams_with(self, odd_members):
         def get_odd_member():
-            member = next(iter(odd_members))
-            odd_members.remove(member)
+            if len(odd_members) > 0:
+                member = next(iter(odd_members))
+                odd_members.remove(member)
+            else:
+                member = self.cut_worst_from_full_teams()
             return member
 
         while len(self.teams) < self.required_teams_number:
