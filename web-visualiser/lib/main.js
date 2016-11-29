@@ -206,7 +206,7 @@ function Vizualizer(canvasId, data) {
     var canvas = $(canvasId);
 
 
-    var teamColors = ["#ff8000", "#0040ff", "#00FF00", "#800000", "#008080", "#FFD700"];
+    var teamColors = ["#ff8000", "#0040ff", "#00FF00", "#800000", "#008080", "#FFD700", "#FF0000", "#800080", "#808080"];
     var edgeColors = ["#72DCF0", "#8BEC78", "#075A9F", "#A7FD2D", "#7EB8DC"];
     var negativeThreshold = -0.3
     var significantThreshold = 0.5;
