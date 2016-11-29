@@ -108,14 +108,10 @@ class Clusterings:
             users_with_distances = list(zip(users_list, users_distances))
             users_with_distances = sorted(users_with_distances,
                                           key=lambda user_with_distances: user_with_distances[1])
-            print([[user.get_id(), d] for user, d in users_with_distances])
 
             # Peek the worst user and make it as a base for the new cluster
             result_cluster = [users_with_distances[0][0]]
             return result_cluster
-
-        for cluster, distances in clusters_with_distances.items():
-            print(str([user.get_id() for user in cluster]) + str(distances))
 
         # "Distances" means value, that is the bigger the better (don't worry, it's really simple inside)
         clusters_sorted_by_distances_descending = sorted(clusters_with_distances,

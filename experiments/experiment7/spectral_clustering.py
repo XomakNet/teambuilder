@@ -2,24 +2,23 @@ from typing import Set, List
 
 from numpy import zeros, ndarray
 from sklearn.cluster import AgglomerativeClustering
+from sklearn.cluster import SpectralClustering
 
 from experiments.experiment5.balancer import Balancer
 from experiments.experiment7.balancer_2 import Balancer2
 from models.user import User
 from utils.data_reader import DataReader
 from utils.metrics import normalized_vector_distance
-from utils.visualization import users_index_sets_to_users_sets, clusters_list_to_users_index_sets
-
-__author__ = 'Xomak'
+from utils.visualization import users_index_sets_to_users_sets, clusters_list_to_users_index_sets, show_users_sets
 
 
-class UsersAgglomerativeClustering:
+class UsersSpectralClustering:
     """
-    Skicit-learn AgglomerativeCustering-based algorithm
+    Skicit-learn SpectralClustering-based algorithm
     """
 
     def __init__(self, reader: DataReader, teams_number: int, desires_weight: float=0.5,
-                 lists_weights: List[float]=None, need_balance: bool=True, balancer=Balancer):
+                 lists_weights: List[float]=None, need_balance: bool=True, negative_threshold: float=-0.3):
         """
         Instantiates algorithm of users' clustering
         :param reader: Reader instance
@@ -27,17 +26,16 @@ class UsersAgglomerativeClustering:
         :param desires_weight: Weight of desires. Should be in range 0 - 1.
         :param lists_weights: Weights of lists. If empty, all lists will have same weight
         :param need_balance: Should teams be balanced
+        :param negative_threshold: threshold of possible euclidean distance between two vectors
         """
-        self.balancer = balancer
         if lists_weights is not None and sum(lists_weights) > 1:
             raise ValueError("Sum of list weights is more than one.")
         self.desires_weight = desires_weight
-        self.linkage = "average"
         self.reader = reader
         self.need_balance = need_balance
         self.lists_weight = lists_weights
         self.teams_number = teams_number
-        self.negative_threshold = -0.3
+        self.negative_threshold = negative_threshold
 
     def get_affinity_between(self, user1: User, user2: User) -> float:
         """
@@ -84,28 +82,18 @@ class UsersAgglomerativeClustering:
         user2 = self.reader.get_user_by_id(user2_id)
         return self.get_affinity_between(user1, user2)
 
-    def get_affinity_matrix(self, matrix) -> ndarray:
+    def get_affinity_matrix_element(self, vector1, vector2):
         """
-        Returns affinity matrix.
-        According to the requirements of skicit-learn, the less affinity is, the more degree of affinity users have
-        :param matrix: Matrix with samples and users
-        :return: Affinity matrix
+        Returns element of the Affinity matrix.
+        Is using by SpectralClustering as precomputed function to calculate elements of Affinity matrix.
+        :param vector1: first id wrapped by scikit-learn ([id1])
+        :param vector2: first id wrapped by scikit-learn ([id2])
+        :return: value of the corresponding element (id1, id2) of the matrix
         """
-        users_number = len(matrix)
-        affinity_matrix = zeros(shape=(users_number, users_number))
-        for i in range(0, users_number):
-            for j in range(i, users_number):
-                if i != j:
-                    user1_id = matrix[i][0]
-                    user2_id = matrix[j][0]
-                    distance = self.get_affinity_between_ids(user1_id, user2_id)
-                else:
-                    distance = 1
-                affinity_matrix[i, j] = 1 - distance
-                affinity_matrix[j, i] = 1 - distance
-        return affinity_matrix
+        id1, id2 = vector1[0], vector2[0]
+        return self.get_affinity_between_ids(id1, id2) if id1 != id2 else 0
 
-    def clusterize(self) -> List[Set[User]]:
+    def cluster(self) -> List[Set[User]]:
         """
         Performs clustering
         :return:
@@ -116,12 +104,10 @@ class UsersAgglomerativeClustering:
         for user in users:
             users_list.append([user.get_id()])
 
-        agg = AgglomerativeClustering(n_clusters=self.teams_number, affinity=self.get_affinity_matrix, linkage=self.linkage)
+        agg = SpectralClustering(n_clusters=self.teams_number, affinity=self.get_affinity_matrix_element)
         r = agg.fit_predict(users_list)
-        sets = users_index_sets_to_users_sets(clusters_list_to_users_index_sets(r), self.reader)
+        clusters = [list(c) for c in users_index_sets_to_users_sets(clusters_list_to_users_index_sets(r), self.reader)]
         if self.need_balance:
-            if self.balancer == Balancer2:
-                sets = [list(s) for s in sets]
-            b = self.balancer(self.teams_number, sets, lambda user1, user2: self.get_affinity_between(user1, user2))
-            b.balance()
-        return sets
+            b = Balancer2(self.teams_number, clusters, lambda user1, user2: self.get_affinity_between(user1, user2))
+            clusters = b.balance()
+        return clusters

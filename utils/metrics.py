@@ -98,8 +98,8 @@ class ClusteringMetric:
 
 
 class TeamMetric:
-    _list_metric_weight = 0.5
-    _desires_metric_weight = 0.5
+    _desires_metric_weight = 0.3
+    _list_metric_weight = 1 - _desires_metric_weight
 
     def __init__(self, users_set):
         if len(users_set) != 0:
