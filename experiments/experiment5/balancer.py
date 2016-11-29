@@ -24,8 +24,6 @@ class Balancer:
         :param teams: Current teams
         :param affinity_function: Function, which is used to calculate distances between 2 users
         """
-        if len(teams) != required_teams_number:
-            raise NotImplementedError("Teams count balancing is not supported yet.")
         self.required_teams_number = required_teams_number
         self.affinity_function = affinity_function
         total_number = 0
@@ -47,12 +45,42 @@ class Balancer:
                 avgs.append(self.affinity_function(user, team_member))
         return numpy.mean(avgs)
 
+    def cut_odd_teams(self):
+        """
+        Destroys the smallest teams and returns their members.
+        :return:
+        """
+        odd_members = set()
+        teams_sorted = list(self.teams)
+        teams_sorted.sort(key=lambda current_team: len(current_team))
+        for team in teams_sorted:
+            if len(self.teams) > self.required_teams_number:
+                for member in team:
+                    odd_members.add(member)
+                self.teams.remove(team)
+        return odd_members
+
+    def populate_new_teams_with(self, odd_members):
+        def get_odd_member():
+            if len(odd_members) > 0:
+                member = next(iter(odd_members))
+                odd_members.remove(member)
+            else:
+                member = self.cut_worst_from_full_teams()
+            return member
+
+        while len(self.teams) < self.required_teams_number:
+            self.teams.append({get_odd_member()})
+
     def balance(self) -> None:
         """
         Performs balancing
         :return:
         """
         odd_members = self.cut_odd_members()
+        odd_members |= self.cut_odd_teams()
+        self.populate_little_teams_with(odd_members)
+        self.populate_new_teams_with(odd_members)
         self.populate_little_teams_with(odd_members)
         self.distribute_members(odd_members)
 
@@ -109,7 +137,7 @@ class Balancer:
                 if most_suitable_team is None or team_result > most_suitable_team_result:
                     most_suitable_team_result = team_result
                     most_suitable_team = team
-            most_suitable_team.append(member)
+            most_suitable_team.add(member)
             members.remove(member)
 
     def cut_odd_members(self) -> Set[User]:
@@ -156,18 +184,22 @@ class Balancer:
         :param members: Members, which will be used (items will being removed, until there is little teams)
         :return:
         """
-        for team in self.teams:
-            if len(team) < self.team_size - 1:
-                most_suitable_member = None
-                most_suitable_member_result = 0
-                for member in members:
-                    member_result = self.get_affinity_to_all(member, team)
-                    if most_suitable_member is None or member_result > most_suitable_member_result:
-                        most_suitable_member_result = member_result
-                        most_suitable_member = member
-                if most_suitable_member is None:
-                    most_suitable_member = self.cut_worst_from_full_teams()
-                else:
-                    members.remove(most_suitable_member)
-                team.append(most_suitable_member)
+        small_team_exists = True
+        while small_team_exists:
+            small_team_exists = False
+            for team in self.teams:
+                if len(team) < self.team_size - 1:
+                    most_suitable_member = None
+                    most_suitable_member_result = 0
+                    for member in members:
+                        member_result = self.get_affinity_to_all(member, team)
+                        if most_suitable_member is None or member_result > most_suitable_member_result:
+                            most_suitable_member_result = member_result
+                            most_suitable_member = member
+                    if most_suitable_member is None:
+                        most_suitable_member = self.cut_worst_from_full_teams()
+                    else:
+                        members.remove(most_suitable_member)
+                    team.add(most_suitable_member)
+                    small_team_exists = True
 

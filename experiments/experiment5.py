@@ -1,74 +1,68 @@
-from numpy.core.multiarray import zeros
-from sklearn.cluster import AgglomerativeClustering
-
-from experiments.experiment5.balancer import Balancer
-from models.user import User
-from utils.metrics import normalized_vector_distance
-from utils.visualization import users_index_sets_to_users_sets, clusters_list_to_users_index_sets
+from experiments.experiment4.preferences_clustering import PreferencesClustering
 from experiments.experiment5.users_agglomerative_clustering import UsersAgglomerativeClustering
 from utils.data_reader import DataReader
 from utils.json_serializer import Serializer
+from utils.metrics import ClusteringMetric
 
 __author__ = 'Xomak'
 
-
-reader = DataReader("../data/users.json")
-
-
-def get_distance_between(user1: User, user2: User):
-    negative_threshold = -0.3
-
-    desires_coeff = 0
-    if user2 in user1.get_selected_people():
-        desires_coeff += 0.5
-    if user1 in user2.get_selected_people():
-        desires_coeff += 0.5
-
-    first_lists = user1.get_lists()
-    second_lists = user2.get_lists()
-    lists_total = 0
-    list_weight = 1/len(first_lists)
-    for list_index in range(0, len(first_lists)):
-        dst = normalized_vector_distance(first_lists[list_index], second_lists[list_index])
-        if dst <= negative_threshold:
-            dst = 0
-        else:
-            dst = (dst-negative_threshold)/(1-negative_threshold)
-        lists_total += list_weight*dst
-
-    return desires_coeff*0.5 + lists_total*0.5
+variants = ["../data/users.json", "../data/ms-sne.json", "../data/eltech-vector.json"]
 
 
-def get_distance_between_ids(user1_id: int, user2_id: int):
-    user1 = reader.get_user_by_id(user1_id)
-    user2 = reader.get_user_by_id(user2_id)
-    return get_distance_between(user1, user2)
+def complete_vs_avg(teams_number):
+    for variant in variants:
+        reader = DataReader(variant)
 
-def get_distances(matrix):
-    users_number = len(matrix)
-    affinity_matrix = zeros(shape=(users_number, users_number))
-    for i in range(0, users_number):
-        for j in range(i, users_number):
-            if i != j:
-                user1_id = matrix[i][0]
-                user2_id = matrix[j][0]
-                distance = get_distance_between_ids(user1_id, user2_id)
-            else:
-                distance = 1
-            affinity_matrix[i, j] = 1 - distance
-            affinity_matrix[j, i] = 1 - distance
-    return affinity_matrix
+        def form_line(metric: ClusteringMetric):
+            return "{},{},{}".format(metric.average_metric, metric.min_metric, metric.max_metric)
+
+        clustering_alg = UsersAgglomerativeClustering(reader, teams_number)
+        clustering_alg.linkage = "complete"
+        sets = clustering_alg.clusterize()
+
+        complete = ClusteringMetric(sets)
+
+        clustering_alg = UsersAgglomerativeClustering(reader, teams_number)
+        clustering_alg.linkage = "average"
+        sets = clustering_alg.clusterize()
+
+        average = ClusteringMetric(sets)
+
+        print(form_line(average) + "," + form_line(complete))
+        #Serializer.serialize_to_file(sets, "../web-visualiser/data.json")
 
 
-agg = AgglomerativeClustering(n_clusters=3, affinity=get_distances, linkage="complete")
-users = reader.get_all_users()
-users_list = []
-for user in users:
-    users_list.append([user.get_id()])
-r = agg.fit_predict(users_list)
-sets = users_index_sets_to_users_sets(clusters_list_to_users_index_sets(r), reader)
-b = Balancer(3, sets, get_distance_between)
-b.balance()
-clustering_alg = UsersAgglomerativeClustering(reader, 3)
-sets = clustering_alg.clusterize()
-Serializer.serialize_to_file(sets, "../web-visualiser/data.json")
+def clusterize_and_compare_by_desires(reader, teams_number, need_balance):
+    clustering_alg = UsersAgglomerativeClustering(reader, teams_number, desires_weight=1, need_balance=need_balance)
+    sets_agg = clustering_alg.clusterize()
+
+    agglomerative = ClusteringMetric(sets_agg).get_average_desires_metric()
+
+    pc = PreferencesClustering(reader.get_all_users(), teams_number, need_balance=need_balance)
+    sets_pc = pc.clusterize()
+    Serializer.serialize_to_file(sets_pc, "../web-visualiser/pc.json")
+    Serializer.serialize_to_file(sets_agg, "../web-visualiser/agg.json")
+    my = ClusteringMetric(sets_pc).get_average_desires_metric()
+
+    print("{};{}".format(agglomerative, my))
+
+def agglomerative_vs_pc(teams_number):
+    need_balance = False
+
+    for variant in variants:
+        reader = DataReader(variant)
+
+        for teams_number in range(2, 10):
+            clusterize_and_compare_by_desires(reader, teams_number, need_balance)
+
+
+def clusterize(filename, teams_number):
+    reader = DataReader(filename)
+    clustering_alg = UsersAgglomerativeClustering(reader, teams_number)
+    cl = clustering_alg.clusterize()
+    Serializer.serialize_to_file(cl, "../web-visualiser/data.json")
+
+reader = DataReader("../data/ms-sne.json")
+#agglomerative_vs_pc(2)
+clusterize_and_compare_by_desires(reader,  2, True)
+#clusterize("../data/ms-sne.json", 2)

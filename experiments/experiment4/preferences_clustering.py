@@ -2,6 +2,7 @@ from math import ceil
 from typing import List
 from typing import Set
 
+from experiments.experiment5.balancer import Balancer
 from models.user import User
 
 __author__ = 'Xomak'
@@ -10,12 +11,13 @@ __author__ = 'Xomak'
 class PreferencesClustering:
     DEBUG = False
 
-    def __init__(self, users: Set[User], teams_number: int):
+    def __init__(self, users: Set[User], teams_number: int, need_balance: bool=True):
         """
         Instantiates algorithms.
         :param users: Set of users
         :param teams_number: Required teams number
         """
+        self.need_balance = need_balance
         self.users = users
         self.teams_number = teams_number
 
@@ -24,7 +26,7 @@ class PreferencesClustering:
         Performs clustering
         :return: List of sets of users
         """
-        return self.__class__.cluster(self.users, self.teams_number)
+        return self.__class__.cluster(self.users, self.teams_number, self.need_balance)
 
     @classmethod
     def _construct_graph(cls, users):
@@ -60,7 +62,7 @@ class PreferencesClustering:
         for user, node in nodes.items():
             sb = cls._construct_team(node, only_mutual)
             if len(sb) > 0:
-                cls._reduce_set(sb, team_size)
+                #cls._reduce_set(sb, team_size)
                 teams.append(sb)
 
     @classmethod
@@ -78,10 +80,20 @@ class PreferencesClustering:
                 node.set_not_free()
                 teams.append(sb)
 
+    @staticmethod
+    def get_distance_between_users(user1: User, user2: User):
+        result = 0
+        if user1 in user2.get_selected_people():
+            result += 0.5
+        if user2 in user1.get_selected_people():
+            result += 0.5
+        return result
+
     @classmethod
-    def cluster(cls, users, teams_number):
+    def cluster(cls, users, teams_number, need_balance):
         """
         Divides users into teams_number teams
+        :param need_balance: It balancing required
         :param users: Set of users
         :param teams_number: Required teams number
         :return: List of sets of users
@@ -95,8 +107,9 @@ class PreferencesClustering:
         cls._construct_teams(nodes, teams, team_size, True)
         cls._construct_teams(nodes, teams, team_size, False)
         cls._construct_teams_on_lonely_users(nodes, teams)
-        cls._balance_teams(nodes, teams, team_size, teams_number)
-        cls._divide_teams(teams, team_size, teams_number)
+
+        # cls._balance_teams(nodes, teams, team_size, teams_number)
+        # cls._divide_teams(teams, team_size, teams_number)
 
         result = []
         for team in teams:
@@ -104,6 +117,9 @@ class PreferencesClustering:
             for node in team:
                 new_team.add(node.get_user())
             result.append(new_team)
+        if need_balance:
+            b = Balancer(teams_number, result, PreferencesClustering.get_distance_between_users)
+            b.balance()
         return result
 
     @classmethod
@@ -152,6 +168,8 @@ class PreferencesClustering:
             for current_set in teams:
                 current_length = len(current_set)
                 if current_length < max_team_size - 1 or (is_balanced and current_length < max_team_size):
+                    if cls.DEBUG:
+                        print("Trying to merge with {}".format(current_set))
                     needed_merge_size = max_team_size - current_length
                     set_to_merge = cls._find_set_to_merge_with(teams, current_set, nodes, needed_merge_size)
                     cls._merge_teams(teams, current_set, set_to_merge)
@@ -186,8 +204,6 @@ class PreferencesClustering:
         :return:
         """
         if len(teams) < required_teams_number:
-
-
             while len(teams) < required_teams_number:
                 poorest_members = cls._find_poorest_two(teams, max_team_size)
 
